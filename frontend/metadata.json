@@ -1,0 +1,5 @@
+{
+  "name": "MeetoCure Hospital Dashboard",
+  "description": "A dashboard for hospital receptionists and management to provide real-time visibility into daily operations, manage appointments, doctors, and patients efficiently.",
+  "requestFramePermissions": []
+}
