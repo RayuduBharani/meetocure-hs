@@ -350,6 +350,55 @@ const Dashboard = () => {
           <TodaysSchedule appointments={appointments} />
         </div>
 
+        {/* Unverified Doctors Section */}
+        <div className="bg-white p-8 rounded-2xl shadow-md border border-gray-200/80 mb-8">
+          <h3 className="text-2xl font-bold text-gray-800 mb-6">
+            Unverified Doctors
+          </h3>
+          <div className="flex flex-wrap gap-4 justify-start">
+            {doctors.length === 0 ? (
+              <p className="text-gray-500">No unverified doctors found.</p>
+            ) : (
+              doctors.map((doctorData) => {
+                // Extract doctor verification and doctor info from the new structure
+                const doctorVerification = doctorData.doctorVerification;
+                const doctor = doctorData.doctor;
+                
+                return (
+                  <div
+                    key={doctorVerification._id}
+                    className="bg-white rounded-2xl shadow-md border border-gray-200/80 flex flex-col items-center justify-center p-6 relative transition-transform duration-300 hover:scale-105 hover:shadow-xl cursor-pointer"
+                    style={{ width: '280px', height: '240px', minWidth: '200px', minHeight: '200px' }}
+                    onClick={() => navigate(`/doctor/${doctorVerification._id}`)}
+                  >
+                    <span
+                      className="absolute top-3 right-3 px-3 py-1 text-xs font-semibold rounded-full bg-red-100 text-red-800"
+                    >
+                      Unverified
+                    </span>
+                    <div className="w-24 h-24 rounded-full bg-gray-100 flex items-center justify-center mb-4 overflow-hidden">
+                      {doctorVerification.profileImage ? (
+                        <img src={doctorVerification.profileImage} alt="Profile" className="w-24 h-24 object-cover rounded-full border-4 border-red-300" />
+                      ) : (
+                        <UserCircleIcon className="w-24 h-24 text-gray-300" />
+                      )}
+                    </div>
+                    <h3 className="text-lg font-bold text-gray-800 text-center mb-2">
+                      {doctorVerification.name || doctorVerification.doctorName || doctorVerification.fullName || doctorVerification.email || 'No Name'}
+                    </h3>
+                    <p className="text-gray-500 text-sm text-center mb-2">
+                      {doctorVerification.specialty || doctorVerification.specialization || 'General Practice'}
+                    </p>
+                    <p className="text-gray-400 text-xs text-center">
+                      {doctorVerification.email || 'No email'}
+                    </p>
+                  </div>
+                );
+              })
+            )}
+          </div>
+        </div>
+
         {/* All Appointments */}
         <div className="bg-white p-8 rounded-2xl shadow-md border border-gray-200/80">
           <h3 className="text-2xl font-bold text-gray-800 mb-6">
