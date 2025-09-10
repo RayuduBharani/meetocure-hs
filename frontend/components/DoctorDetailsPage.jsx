@@ -11,23 +11,39 @@ const DoctorDetailsPage = () => {
     const [selectedImage, setSelectedImage] = useState(null); // ✅ for preview
     const [stats, setStats] = useState({ totalAppointments: 0, totalPatients: 0 });
     const [patients, setPatients] = useState([]);
+    const [appointments, setAppointments] = useState([]);
+    const [appointmentsLoading, setAppointmentsLoading] = useState(false);
+    const [appointmentFilter, setAppointmentFilter] = useState('all');
+    const [appointmentSearch, setAppointmentSearch] = useState('');
+    const [actionLoading, setActionLoading] = useState({ verify: false, reject: false });
 
     useEffect(() => {
         fetch(`/api/doctors/${doctorId}`)
             .then((res) => res.json())
-            .then((data) => {
-                setDoctor(data);
-                setLoading(false);
+            .then((response) => {
+                if (response.success && response.data) {
+                    // Use doctorVerification data for display since it has more complete info
+                    setDoctor(response.data.doctorVerification);
+                    setLoading(false);
 
-                // Fetch stats for this doctor
-                fetch(`/api/appointments/doctor/${doctorId}/stats`)
-                    .then((res) => res.json())
-                    .then((statsData) => setStats(statsData));
+                    // Fetch stats for this doctor
+                    fetch(`/api/appointments/doctor/${doctorId}/stats`)
+                        .then((res) => res.json())
+                        .then((statsData) => setStats(statsData))
+                        .catch((err) => console.error("Error fetching stats:", err));
 
-                // Fetch patients who booked appointments with this doctor
-                fetch(`/api/appointments/doctor/${doctorId}/patients`)
-                    .then((res) => res.json())
-                    .then((patientsData) => setPatients(patientsData));
+                    // Fetch patients who booked appointments with this doctor
+                    fetch(`/api/appointments/doctor/${doctorId}/patients`)
+                        .then((res) => res.json())
+                        .then((patientsData) => setPatients(patientsData))
+                        .catch((err) => console.error("Error fetching patients:", err));
+
+                    // Fetch all appointments for this doctor
+                    fetchAppointments();
+                } else {
+                    console.error("Error fetching doctor data:", response.error);
+                    setLoading(false);
+                }
             })
             .catch((err) => {
                 console.error("Error fetching doctor data:", err);
@@ -35,42 +51,93 @@ const DoctorDetailsPage = () => {
             });
     }, [doctorId]);
 
-
-    const handleVerify = async () => {
+    const fetchAppointments = async () => {
+        setAppointmentsLoading(true);
         try {
-            const res = await fetch(`/api/doctors/${doctorId}/verify`, { method: "PATCH" });
-            if (!res.ok) {
-                const text = await res.text();
-                alert("Verification failed: " + text);
-                return;
-            }
-            // Try to parse JSON, fallback to text
-            let data;
-            try {
-                data = await res.json();
-            } catch {
-                data = null;
-            }
-            if (data && data.success) {
-                navigate("/");
+            const res = await fetch(`/api/appointments/doctor/${doctorId}`);
+            const data = await res.json();
+            if (data.success) {
+                setAppointments(data.data);
             } else {
-                alert("Verification failed: " + (data?.error || "Unknown error"));
+                console.error("Error fetching appointments:", data.error);
             }
         } catch (err) {
-            alert("Network error: " + err.message);
+            console.error("Error fetching appointments:", err);
+        } finally {
+            setAppointmentsLoading(false);
+        }
+    };
+
+    const handleVerify = async () => {
+        // Confirm verification
+        const confirmed = window.confirm(
+            `Are you sure you want to verify ${doctor?.fullName || doctor?.name || 'this doctor'}? This action cannot be undone.`
+        );
+        
+        if (!confirmed) return;
+
+        setActionLoading(prev => ({ ...prev, verify: true }));
+
+        try {
+            const res = await fetch(`/api/doctors/${doctorId}/verify`, { 
+                method: "PATCH",
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+            });
+            
+            const data = await res.json();
+            
+            if (res.ok && data.success) {
+                alert(`Doctor ${doctor?.fullName || doctor?.name || ''} has been verified successfully!`);
+                navigate("/");
+            } else {
+                alert(`Verification failed: ${data.error || 'Unknown error'}`);
+            }
+        } catch (err) {
+            console.error('Error verifying doctor:', err);
+            alert("Network error occurred while verifying doctor: " + err.message);
+        } finally {
+            setActionLoading(prev => ({ ...prev, verify: false }));
         }
     };
     const handleReject = async () => {
+        // Get rejection reason
+        const reason = prompt(
+            `Please provide a reason for rejecting ${doctor?.fullName || doctor?.name || 'this doctor'} (optional):`
+        );
+        
+        // Confirm rejection
+        const confirmed = window.confirm(
+            `Are you sure you want to reject ${doctor?.fullName || doctor?.name || 'this doctor'}? This action cannot be undone.`
+        );
+        
+        if (!confirmed) return;
+
+        setActionLoading(prev => ({ ...prev, reject: true }));
+
         try {
-            const res = await fetch(`/api/doctors/${doctorId}/reject`, { method: "PATCH" });
-            if (!res.ok) {
-                const text = await res.text();
-                alert("Rejection failed: " + text);
-                return;
+            const res = await fetch(`/api/doctors/${doctorId}/reject`, { 
+                method: "PATCH",
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ reason: reason || '' }),
+            });
+            
+            const data = await res.json();
+            
+            if (res.ok && data.success) {
+                alert(`Doctor ${doctor?.fullName || doctor?.name || ''} has been rejected successfully!`);
+                navigate("/");
+            } else {
+                alert(`Rejection failed: ${data.error || 'Unknown error'}`);
             }
-            navigate("/");
         } catch (err) {
-            alert("Network error: " + err.message);
+            console.error('Error rejecting doctor:', err);
+            alert("Network error occurred while rejecting doctor: " + err.message);
+        } finally {
+            setActionLoading(prev => ({ ...prev, reject: false }));
         }
     };
 
@@ -158,12 +225,224 @@ const DoctorDetailsPage = () => {
                         <ul className="list-disc pl-6">
                             {patients.map((patient) => (
                                 <li key={patient._id} className="text-gray-700 mb-2">
-                                    {patient.name} ({patient.email})
+                                    {patient.name} ({patient.email}) - {patient.appointmentCount} appointment(s)
                                 </li>
                             ))}
                         </ul>
                     </div>
                 )}
+
+                {/* Appointments List */}
+                <div className="bg-white shadow rounded-xl p-8 mt-8">
+                    <div className="flex justify-between items-center mb-6">
+                        <h4 className="font-bold text-lg text-gray-900">All Appointments</h4>
+                        <button
+                            onClick={fetchAppointments}
+                            disabled={appointmentsLoading}
+                            className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors duration-200 disabled:bg-gray-400 disabled:cursor-not-allowed text-sm"
+                        >
+                            {appointmentsLoading ? 'Refreshing...' : 'Refresh'}
+                        </button>
+                    </div>
+                    
+                    {/* Appointment Summary */}
+                    {appointments.length > 0 && (
+                        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6 p-4 bg-gray-50 rounded-lg">
+                            <div className="text-center">
+                                <p className="text-2xl font-bold text-blue-600">{appointments.length}</p>
+                                <p className="text-sm text-gray-600">Total</p>
+                            </div>
+                            <div className="text-center">
+                                <p className="text-2xl font-bold text-green-600">
+                                    {appointments.filter(apt => apt.status === 'completed').length}
+                                </p>
+                                <p className="text-sm text-gray-600">Completed</p>
+                            </div>
+                            <div className="text-center">
+                                <p className="text-2xl font-bold text-yellow-600">
+                                    {appointments.filter(apt => apt.status === 'pending').length}
+                                </p>
+                                <p className="text-sm text-gray-600">Pending</p>
+                            </div>
+                            <div className="text-center">
+                                <p className="text-2xl font-bold text-red-600">
+                                    {appointments.filter(apt => apt.status === 'cancelled').length}
+                                </p>
+                                <p className="text-sm text-gray-600">Cancelled</p>
+                            </div>
+                        </div>
+                    )}
+                    
+                    {/* Search and Filter Controls */}
+                    <div className="flex flex-col md:flex-row gap-4 mb-4">
+                        <div className="flex-1">
+                            <input
+                                type="text"
+                                placeholder="Search by patient name or email..."
+                                value={appointmentSearch}
+                                onChange={(e) => setAppointmentSearch(e.target.value)}
+                                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                            />
+                        </div>
+                        <div className="flex gap-2">
+                        <button
+                            onClick={() => setAppointmentFilter('all')}
+                            className={`px-3 py-1 rounded-full text-sm font-medium transition-colors ${
+                                appointmentFilter === 'all' 
+                                    ? 'bg-blue-600 text-white' 
+                                    : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                            }`}
+                        >
+                            All
+                        </button>
+                        <button
+                            onClick={() => setAppointmentFilter('pending')}
+                            className={`px-3 py-1 rounded-full text-sm font-medium transition-colors ${
+                                appointmentFilter === 'pending' 
+                                    ? 'bg-yellow-600 text-white' 
+                                    : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                            }`}
+                        >
+                            Pending
+                        </button>
+                        <button
+                            onClick={() => setAppointmentFilter('confirmed')}
+                            className={`px-3 py-1 rounded-full text-sm font-medium transition-colors ${
+                                appointmentFilter === 'confirmed' 
+                                    ? 'bg-blue-600 text-white' 
+                                    : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                            }`}
+                        >
+                            Confirmed
+                        </button>
+                        <button
+                            onClick={() => setAppointmentFilter('completed')}
+                            className={`px-3 py-1 rounded-full text-sm font-medium transition-colors ${
+                                appointmentFilter === 'completed' 
+                                    ? 'bg-green-600 text-white' 
+                                    : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                            }`}
+                        >
+                            Completed
+                        </button>
+                        <button
+                            onClick={() => setAppointmentFilter('cancelled')}
+                            className={`px-3 py-1 rounded-full text-sm font-medium transition-colors ${
+                                appointmentFilter === 'cancelled' 
+                                    ? 'bg-red-600 text-white' 
+                                    : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                            }`}
+                        >
+                            Cancelled
+                        </button>
+                        </div>
+                    </div>
+                    
+                    {appointmentsLoading ? (
+                        <div className="text-center py-8">
+                            <p className="text-gray-500">Loading appointments...</p>
+                        </div>
+                    ) : appointments.length === 0 ? (
+                        <div className="text-center py-8">
+                            <p className="text-gray-500">No appointments found for this doctor.</p>
+                        </div>
+                    ) : appointments.filter(appointment => {
+                        const matchesFilter = appointmentFilter === 'all' || appointment.status === appointmentFilter;
+                        const matchesSearch = !appointmentSearch || 
+                            (appointment.patient?.name?.toLowerCase().includes(appointmentSearch.toLowerCase())) ||
+                            (appointment.patient?.email?.toLowerCase().includes(appointmentSearch.toLowerCase()));
+                        return matchesFilter && matchesSearch;
+                    }).length === 0 ? (
+                        <div className="text-center py-8">
+                            <p className="text-gray-500">No {appointmentFilter} appointments found.</p>
+                        </div>
+                    ) : (
+                        <div className="overflow-x-auto">
+                            <table className="w-full text-sm">
+                                <thead>
+                                    <tr className="border-b border-gray-200">
+                                        <th className="text-left py-3 px-2 font-semibold text-gray-700">Patient</th>
+                                        <th className="text-left py-3 px-2 font-semibold text-gray-700">Date & Time</th>
+                                        <th className="text-left py-3 px-2 font-semibold text-gray-700">Status</th>
+                                        <th className="text-left py-3 px-2 font-semibold text-gray-700">Type</th>
+                                        <th className="text-left py-3 px-2 font-semibold text-gray-700">Payment</th>
+                                        <th className="text-left py-3 px-2 font-semibold text-gray-700">Reason</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {appointments
+                                        .filter(appointment => {
+                                            const matchesFilter = appointmentFilter === 'all' || appointment.status === appointmentFilter;
+                                            const matchesSearch = !appointmentSearch || 
+                                                (appointment.patient?.name?.toLowerCase().includes(appointmentSearch.toLowerCase())) ||
+                                                (appointment.patient?.email?.toLowerCase().includes(appointmentSearch.toLowerCase()));
+                                            return matchesFilter && matchesSearch;
+                                        })
+                                        .map((appointment) => (
+                                        <tr key={appointment._id} className="border-b border-gray-100 hover:bg-gray-50">
+                                            <td className="py-3 px-2">
+                                                <div>
+                                                    <button
+                                                        onClick={() => navigate(`/patient/${appointment.patient?._id || appointment.patient}`)}
+                                                        className="font-medium text-blue-600 hover:text-blue-800 hover:underline cursor-pointer"
+                                                    >
+                                                        {appointment.patient?.name || appointment.patientInfo?.name || 'N/A'}
+                                                    </button>
+                                                    <p className="text-gray-500 text-xs">
+                                                        {appointment.patient?.email || appointment.patientInfo?.email || 'N/A'}
+                                                    </p>
+                                                </div>
+                                            </td>
+                                            <td className="py-3 px-2 text-gray-700">
+                                                <div>
+                                                    <p className="font-medium">
+                                                        {new Date(appointment.appointment_date).toLocaleDateString()}
+                                                    </p>
+                                                    <p className="text-xs text-gray-500">
+                                                        {appointment.appointment_time}
+                                                    </p>
+                                                </div>
+                                            </td>
+                                            <td className="py-3 px-2">
+                                                <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                                                    appointment.status === 'completed' ? 'bg-green-100 text-green-800' :
+                                                    appointment.status === 'confirmed' ? 'bg-blue-100 text-blue-800' :
+                                                    appointment.status === 'pending' ? 'bg-yellow-100 text-yellow-800' :
+                                                    'bg-red-100 text-red-800'
+                                                }`}>
+                                                    {appointment.status}
+                                                </span>
+                                            </td>
+                                            <td className="py-3 px-2 text-gray-700 capitalize">
+                                                {appointment.appointment_type}
+                                            </td>
+                                            <td className="py-3 px-2">
+                                                <div>
+                                                    <p className="text-gray-700 font-medium">
+                                                        ${appointment.payment?.amount || 0}
+                                                    </p>
+                                                    <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                                                        appointment.payment?.status === 'paid' ? 'bg-green-100 text-green-800' :
+                                                        appointment.payment?.status === 'pending' ? 'bg-yellow-100 text-yellow-800' :
+                                                        appointment.payment?.status === 'failed' ? 'bg-red-100 text-red-800' :
+                                                        'bg-gray-100 text-gray-800'
+                                                    }`}>
+                                                        {appointment.payment?.status || 'pending'}
+                                                    </span>
+                                                </div>
+                                            </td>
+                                            <td className="py-3 px-2 text-gray-700">
+                                                <p className="text-sm">
+                                                    {appointment.reason || 'No reason provided'}
+                                                </p>
+                                            </td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
+                        </div>
+                    )}
+                </div>
 
                 {/* Hospital Info */}
                 {doctor.hospitalInfo?.length > 0 && (
@@ -290,15 +569,25 @@ const DoctorDetailsPage = () => {
                 <div className="flex gap-4 justify-end">
                     <button
                         onClick={handleVerify}
-                        className="bg-green-600 text-white font-semibold px-6 py-2 rounded-lg hover:bg-green-700 transition-colors duration-200"
+                        disabled={actionLoading.verify || actionLoading.reject}
+                        className={`font-semibold px-6 py-2 rounded-lg transition-colors duration-200 ${
+                            actionLoading.verify || actionLoading.reject
+                                ? 'bg-gray-400 text-gray-200 cursor-not-allowed'
+                                : 'bg-green-600 text-white hover:bg-green-700'
+                        }`}
                     >
-                        Verify
+                        {actionLoading.verify ? 'Verifying...' : 'Verify'}
                     </button>
                     <button
                         onClick={handleReject}
-                        className="bg-red-600 text-white font-semibold px-6 py-2 rounded-lg hover:bg-red-700 transition-colors duration-200"
+                        disabled={actionLoading.verify || actionLoading.reject}
+                        className={`font-semibold px-6 py-2 rounded-lg transition-colors duration-200 ${
+                            actionLoading.verify || actionLoading.reject
+                                ? 'bg-gray-400 text-gray-200 cursor-not-allowed'
+                                : 'bg-red-600 text-white hover:bg-red-700'
+                        }`}
                     >
-                        Reject
+                        {actionLoading.reject ? 'Rejecting...' : 'Reject'}
                     </button>
                 </div>
             </div>

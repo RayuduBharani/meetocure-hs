@@ -7,6 +7,8 @@ import { DoctorManagement } from './components/DoctorManagement';
 import { LoginPage } from './components/LoginPage';
 import DoctorDetailsPage from './components/DoctorDetailsPage';
 import DoctorStatsPage from './components/DoctorStatsPage';
+import PatientDetailsPage from './components/PatientDetailsPage';
+import AppointmentDetailsPage from './components/AppointmentDetailsPage';
 import { BrowserRouter as Router, Routes, Route, useLocation } from 'react-router-dom';
 
 
@@ -42,6 +44,8 @@ const AppLayout = ({
             <Route path="/" element={<Dashboard />} />
             <Route path="/doctor/:doctorId" element={<DoctorDetailsPage />} />
             <Route path="/doctor/:doctorId/stats" element={<DoctorStatsPage />} />
+            <Route path="/patient/:patientId" element={<PatientDetailsPage />} />
+            <Route path="/appointment/:appointmentId" element={<AppointmentDetailsPage />} />
             <Route path="/appointments" element={<AppointmentsDashboard onNavigateToPatient={handleNavigateToPatient} />} />
             <Route path="/doctors" element={<DoctorManagement hospitalName={hospitalName} />} />
             <Route path="/patients" element={<PatientSearch initialSearchTarget={searchTarget} onExitPatientView={handleClearSearchTarget} getPageTitle={getPageTitle} />} />
