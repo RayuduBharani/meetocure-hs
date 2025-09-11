@@ -1,115 +1,154 @@
-import express from 'express';
+import express, { json } from 'express';
 import mongoose from 'mongoose';
 import DoctorVerification from '../models/DoctorVerification.js';
 import Doctor from '../models/Doctor.js';
+import User from "../models/User.js"
+import Appointment from '../models/Appointment.js';
 
 const router = express.Router();
 
 // Get patients who booked appointments to verified doctors for a hospital
-router.get('/', async (req, res) => {
+router.get('/:hospitalId', async (req, res) => {
     try {
-        const { hospitalName } = req.query;
+        const { hospitalId } = req.params;
         
-        if (!hospitalName) {
+        if (!hospitalId || !mongoose.Types.ObjectId.isValid(hospitalId)) {
             return res.status(400).json({ 
                 success: false, 
-                error: 'hospitalName is required' 
+                error: 'Valid Hospital ID is required' 
             });
         }
 
-        // Get verified doctors for the hospital using our new structure
+        const hospitalData = await User.findById(hospitalId);
+        if (!hospitalData) {
+            return res.status(404).json({
+                success: false,
+                error: 'Hospital not found'
+            });
+        }
+        // console.log(hospitalData)
+
+        // Get all doctors from DoctorVerification collection based on hospital's doctors array
+        // Get all verified doctor verifications for this hospital
+        // Clean and validate doctor IDs
+        const validDoctorIds = hospitalData.docters
+            .map(id => id.toString().trim())
+            .filter(id => mongoose.Types.ObjectId.isValid(id));
+
         const verifiedDoctorVerifications = await DoctorVerification.find({ 
-            verified: true, 
-            'hospitalInfo.hospitalName': { $regex: `^${hospitalName}$`, $options: 'i' } 
+            _id: { $in: validDoctorIds },
+            registrationStatus: "verified"
         });
 
-        // Get corresponding doctor records
-        const verifiedDoctors = await Promise.all(
-            verifiedDoctorVerifications.map(async (verification) => {
-                const doctor = await Doctor.findOne({ verificationDetails: verification._id });
-                return {
-                    doctorVerification: verification,
-                    doctor: doctor
-                };
-            })
-        );
+        // Get all doctors that reference these verifications
+        const doctors = await Doctor.find({
+            verificationDetails: { $in: verifiedDoctorVerifications.map(v => v._id) },
+            registrationStatus: "verified"
+        });
 
-        // Filter to only include doctors that are verified in both collections
-        const fullyVerifiedDoctors = verifiedDoctors.filter(item => 
-            item.doctor && item.doctor.registrationStatus === "verified"
-        );
+        // Find all appointments for these doctors and populate detailed information
+        const appointments = await Appointment.find({ 
+            doctor: { $in: doctors.map(d => d._id) }
+        })
+        .populate({
+            path: 'patient',
+            select: '-notifications' // Exclude notifications array to reduce payload size
+        })
+        .populate({
+            path: 'doctor',
+            populate: {
+                path: 'verificationDetails',
+                model: 'doctorVerification'
+            }
+        });
 
-        const doctorIds = fullyVerifiedDoctors.map(item => item.doctorVerification._id.toString());
+        // Create a map to store unique patients with their appointments
+        const patientMap = new Map();
 
-        if (doctorIds.length === 0) {
-            return res.json([]);
-        }
+        appointments.forEach(appointment => {
+            const patient = appointment.patient;
+            if (!patient) return;
+            // console.log('Processing appointment for patient:', appointment);
 
-        // Get appointments for these doctors
-        const Appointments = mongoose.connection.collection('appointments');
-        const appointments = await Appointments.find({ 
-            doctorId: { $in: doctorIds } 
-        }).toArray();
-
-        const patientIds = [...new Set(appointments.map(app => app.patientId))];
-
-        if (patientIds.length === 0) {
-            return res.json([]);
-        }
-
-        // Get patients with their appointment history
-        const Patients = mongoose.connection.collection('patients');
-        const patients = await Patients.find({ 
-            _id: { $in: patientIds.map(id => new mongoose.Types.ObjectId(id)) } 
-        }).toArray();
-
-        // Enrich patients with their appointment history
-        const patientsWithAppointments = patients.map(patient => {
-            const patientAppointments = appointments
-                .filter(app => app.patientId === patient._id.toString())
-                .map(appointment => {
-                    // Find the doctor for this appointment
-                    const doctorData = fullyVerifiedDoctors.find(
-                        doc => doc.doctorVerification._id.toString() === appointment.doctorId
-                    );
-                    
-                    return {
-                        id: appointment._id.toString(),
-                        date: appointment.date,
-                        time: appointment.time,
-                        status: appointment.status,
-                        details: appointment.details || appointment.notes,
-                        doctor: {
-                            name: doctorData?.doctorVerification.name || 
-                                  doctorData?.doctorVerification.doctorName || 
-                                  doctorData?.doctorVerification.fullName || 
-                                  'Unknown Doctor',
-                            specialty: doctorData?.doctorVerification.specialty || 
-                                      doctorData?.doctorVerification.specialization || 
-                                      'General Practice'
-                        }
-                    };
+            if (!patientMap.has(patient._id.toString())) {
+                // Initialize patient data with all fields from the schema
+                patientMap.set(patient._id.toString(), {
+                    id: patient._id,
+                    name: patient.name,
+                    email: patient.email,
+                    phone: patient.phone,
+                    dateOfBirth: patient.dateOfBirth,
+                    gender: patient.gender,
+                    address: patient.address,
+                    emergencyContact: patient.emergencyContact,
+                    medicalInfo: patient.medicalInfo,
+                    status: patient.status,
+                    createdAt: patient.createdAt,
+                    appointments: []
                 });
+            }
 
-            return {
-                id: patient._id.toString(),
-                patientId: patient.patientId || patient._id.toString(),
-                name: patient.name,
-                email: patient.email,
-                phone: patient.phone,
-                gender: patient.gender,
-                dateOfBirth: patient.dateOfBirth,
-                appointments: patientAppointments
-            };
+            // Add appointment details
+            const patientData = patientMap.get(patient._id.toString());
+            patientData.appointments.push({
+                id: appointment._id,
+                date: appointment.appointment_date,
+                time: appointment.appointment_time,
+                type: appointment.appointment_type,
+                status: appointment.status,
+                reason: appointment.reason,
+                doctor: {
+                    id: appointment.doctor._id,
+                    email: appointment.doctor.email,
+                    mobileNumber: appointment.doctor.mobileNumber,
+                    registrationStatus: appointment.doctor.registrationStatus,
+                    // Information from verification details
+                    name: appointment.doctor.verificationDetails?.fullName || appointment.doctor.verificationDetails?.doctorName || 'N/A',
+                    specialization: appointment.doctor.verificationDetails?.specialization || 'N/A',
+                    specialty: appointment.doctor.verificationDetails?.specialty || 'N/A',
+                    profileImage: appointment.doctor.verificationDetails?.profileImage,
+                    verified: appointment.doctor.verificationDetails?.verified,
+                    hospitalInfo: appointment.doctor.verificationDetails?.hospitalInfo
+                },
+                patientInfo: appointment.patientInfo,
+                payment: {
+                    amount: appointment.payment?.amount,
+                    status: appointment.payment?.status,
+                    currency: appointment.payment?.currency
+                },
+                medicalRecords: appointment.medicalRecords
+            });
         });
 
-        res.json(patientsWithAppointments);
-    } catch (err) {
+        // Convert map to array and sort patients by most recent appointment
+        const patients = Array.from(patientMap.values()).map(patient => ({
+            ...patient,
+            appointments: patient.appointments.sort((a, b) => 
+                new Date(b.date) - new Date(a.date)
+            )
+        }));
+
+        res.json({
+            success: true,
+            patients
+        });
+    }
+    catch(err) {
         console.error('Error fetching patients:', err);
-        res.status(500).json({ 
-            success: false, 
-            error: 'Failed to fetch patients', 
-            details: err.message 
+        let errorMessage = 'Internal server error';
+        let statusCode = 500;
+
+        if (err.name === 'CastError') {
+            errorMessage = 'Invalid ID format';
+            statusCode = 400;
+        } else if (err.name === 'ValidationError') {
+            errorMessage = err.message;
+            statusCode = 400;
+        }
+
+        res.status(statusCode).json({
+            success: false,
+            error: errorMessage
         });
     }
 });

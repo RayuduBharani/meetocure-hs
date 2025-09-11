@@ -61,7 +61,7 @@ router.post('/login', async (req, res) => {
             const isMatch = await user.comparePassword(password);
             if (!isMatch) return res.status(401).json({ success: false, error: 'Invalid password' });
             const token = jwt.sign({ email, hospitalName: user.hospitalName }, JWT_SECRET, { expiresIn: '2h' });
-            return res.json({ success: true, token, hospitalName: user.hospitalName });
+            return res.json({ success: true, token, hospitalName: user.hospitalName , email : user.email , id : user._id });
         }
         // Check if email exists for another hospital
         const emailExists = await User.findOne({ email });

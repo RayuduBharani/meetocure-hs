@@ -32,6 +32,8 @@ const LoginPage = ({ onLogin }) => {
             } else if (data.success && data.token) {
                 localStorage.setItem('token', data.token);
                 localStorage.setItem('hospitalName', data.hospitalName);
+                localStorage.setItem('email', data.email);
+                localStorage.setItem('userId', data.id);
                 onLogin();
             } else {
                 alert('Login failed: ' + (data.error || 'Unknown error'));

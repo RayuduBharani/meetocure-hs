@@ -7,31 +7,192 @@ import { Header } from './Header';
 import { UserCircleIcon } from './icons/Icons';
 
 const AppointmentDetailModal = ({ appointment, onClose }) => (
-    <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex justify-center items-center">
-        <div className="bg-white rounded-xl shadow-2xl p-6 w-full max-w-lg mx-4">
+    <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex justify-center items-center overflow-y-auto">
+        <div className="bg-white rounded-xl shadow-2xl p-6 w-full max-w-4xl mx-4 my-8">
             <div className="flex justify-between items-center border-b pb-3 mb-4 border-gray-200">
                 <h3 className="text-xl font-bold text-gray-800">Appointment Details</h3>
                 <button onClick={onClose} className="text-gray-400 hover:text-gray-600 text-2xl">&times;</button>
             </div>
-            <div className="space-y-4">
-                <div>
-                    <p className="text-sm text-gray-500">Doctor</p>
-                    <p className="font-semibold text-gray-800">{appointment.doctor.name} ({appointment.doctor.specialty})</p>
-                </div>
-                <div>
-                    <p className="text-sm text-gray-500">Date & Time</p>
-                    <p className="font-semibold text-gray-800">{appointment.date} at {appointment.time}</p>
-                </div>
-                <div>
-                    <p className="text-sm text-gray-500">Status</p>
-                    <p className="font-semibold text-gray-800">{appointment.status}</p>
-                </div>
-                <div>
-                    <p className="text-sm text-gray-500">Notes</p>
-                    <p className="text-gray-700 bg-gray-50 p-3 rounded-lg border border-gray-200">{appointment.details || 'No additional details available.'}</p>
+            
+            {/* Doctor Information */}
+            <div className="mb-6">
+                <h4 className="text-lg font-semibold text-gray-800 mb-3">Doctor Information</h4>
+                <div className="bg-gray-50 p-4 rounded-lg border border-gray-200">
+                    <div className="flex items-center gap-4 mb-3">
+                        {appointment.doctor.profileImage ? (
+                            <img 
+                                src={appointment.doctor.profileImage} 
+                                alt={appointment.doctor.name}
+                                className="w-16 h-16 rounded-full object-cover"
+                            />
+                        ) : (
+                            <UserCircleIcon className="w-16 h-16 text-gray-400" />
+                        )}
+                        <div>
+                            <p className="font-semibold text-gray-800 text-lg">{appointment.doctor.name}</p>
+                            <p className="text-gray-600">{appointment.doctor.specialization}</p>
+                            <p className="text-gray-600">{appointment.doctor.specialty}</p>
+                        </div>
+                    </div>
+                    <div className="grid grid-cols-2 gap-4">
+                        <div>
+                            <p className="text-sm text-gray-600">Email: {appointment.doctor.email}</p>
+                            <p className="text-sm text-gray-600">Mobile: {appointment.doctor.mobileNumber}</p>
+                            {appointment.doctor.hospitalInfo?.hospitalName && (
+                                <p className="text-sm text-gray-600">Hospital: {appointment.doctor.hospitalInfo.hospitalName}</p>
+                            )}
+                        </div>
+                        <div>
+                            <p className="text-sm text-gray-600">Status: {appointment.doctor.registrationStatus}</p>
+                            <p className="text-sm text-gray-600">Experience: {appointment.doctor.experienceYears} years</p>
+                        </div>
+                    </div>
                 </div>
             </div>
-            <div className="mt-6 text-right">
+
+            {/* Patient Information */}
+            <div className="mb-6">
+                <h4 className="text-lg font-semibold text-gray-800 mb-3">Patient Information</h4>
+                <div className="bg-gray-50 p-4 rounded-lg border border-gray-200">
+                    <div className="grid grid-cols-2 gap-4">
+                        <div>
+                            <p className="text-sm text-gray-600">Name: {appointment.patientInfo?.name || 'N/A'}</p>
+                            <p className="text-sm text-gray-600">Age: {appointment.patientInfo?.age || 'N/A'}</p>
+                            <p className="text-sm text-gray-600">Gender: {appointment.patientInfo?.gender || 'N/A'}</p>
+                            <p className="text-sm text-gray-600">Blood Group: {appointment.patientInfo?.blood_group || 'N/A'}</p>
+                        </div>
+                        <div>
+                            <p className="text-sm text-gray-600">Phone: {appointment.patientInfo?.phone || 'N/A'}</p>
+                            {appointment.patientInfo?.allergies?.length > 0 && (
+                                <div className="mt-2">
+                                    <p className="text-sm font-medium text-gray-700">Allergies:</p>
+                                    <ul className="list-disc pl-4 text-sm text-gray-600">
+                                        {appointment.patientInfo.allergies.map((allergy, index) => (
+                                            <li key={index}>{allergy}</li>
+                                        ))}
+                                    </ul>
+                                </div>
+                            )}
+                        </div>
+                    </div>
+                    {appointment.patientInfo?.medical_history_summary && (
+                        <div className="mt-3">
+                            <p className="text-sm font-medium text-gray-700">Medical History:</p>
+                            <p className="text-sm text-gray-600 mt-1 whitespace-pre-wrap">
+                                {appointment.patientInfo.medical_history_summary}
+                            </p>
+                        </div>
+                    )}
+                </div>
+            </div>
+
+            {/* Appointment Details */}
+            <div className="mb-6">
+                <h4 className="text-lg font-semibold text-gray-800 mb-3">Appointment Details</h4>
+                <div className="grid grid-cols-2 gap-6">
+                    <div className="bg-gray-50 p-4 rounded-lg border border-gray-200">
+                        <div className="space-y-2">
+                            <p className="text-sm">
+                                <span className="text-gray-600">Date:</span>
+                                <span className="ml-2 font-semibold text-gray-800">{appointment.date}</span>
+                            </p>
+                            <p className="text-sm">
+                                <span className="text-gray-600">Time:</span>
+                                <span className="ml-2 font-semibold text-gray-800">{appointment.time}</span>
+                            </p>
+                            <p className="text-sm">
+                                <span className="text-gray-600">Type:</span>
+                                <span className="ml-2 font-semibold text-gray-800">{appointment.type}</span>
+                            </p>
+                            <p className="text-sm">
+                                <span className="text-gray-600">Status:</span>
+                                <span className={`ml-2 px-2 py-1 rounded-full text-xs font-semibold ${
+                                    appointment.status === 'completed' ? 'bg-green-100 text-green-800' :
+                                    appointment.status === 'confirmed' ? 'bg-blue-100 text-blue-800' :
+                                    appointment.status === 'pending' ? 'bg-yellow-100 text-yellow-800' :
+                                    'bg-red-100 text-red-800'
+                                }`}>
+                                    {appointment.status}
+                                </span>
+                            </p>
+                            {appointment.reason && (
+                                <p className="text-sm">
+                                    <span className="text-gray-600">Reason:</span>
+                                    <span className="ml-2 text-gray-800">{appointment.reason}</span>
+                                </p>
+                            )}
+                        </div>
+                    </div>
+
+                    {/* Payment Information */}
+                    <div className="bg-gray-50 p-4 rounded-lg border border-gray-200">
+                        <p className="font-medium text-gray-700 mb-2">Payment Information</p>
+                        <div className="space-y-2">
+                            <p className="text-sm">
+                                <span className="text-gray-600">Amount:</span>
+                                <span className="ml-2 font-semibold text-gray-800">
+                                    {appointment.payment?.amount || 0} {appointment.payment?.currency || 'USD'}
+                                </span>
+                            </p>
+                            <p className="text-sm">
+                                <span className="text-gray-600">Status:</span>
+                                <span className={`ml-2 px-2 py-1 rounded-full text-xs font-semibold ${
+                                    (appointment.payment?.status === 'paid' || appointment.payment?.status === 'completed') ? 'bg-green-100 text-green-800' :
+                                    appointment.payment?.status === 'pending' ? 'bg-yellow-100 text-yellow-800' :
+                                    'bg-red-100 text-red-800'
+                                }`}>
+                                    {appointment.payment?.status || 'pending'}
+                                </span>
+                            </p>
+                            {appointment.payment?.transaction_id && (
+                                <p className="text-sm">
+                                    <span className="text-gray-600">Transaction ID:</span>
+                                    <span className="ml-2 text-gray-800">{appointment.payment.transaction_id}</span>
+                                </p>
+                            )}
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            {/* Medical Records */}
+            {appointment.medicalRecords && appointment.medicalRecords.length > 0 && (
+                <div className="mb-6">
+                    <h4 className="text-lg font-semibold text-gray-800 mb-3">Medical Records</h4>
+                    <div className="bg-gray-50 p-4 rounded-lg border border-gray-200">
+                        <div className="grid grid-cols-1 gap-3">
+                            {appointment.medicalRecords.map((record, index) => (
+                                <div key={record._id || index} className="flex items-center justify-between p-2 bg-white rounded border border-gray-200">
+                                    <div className="flex items-center space-x-3">
+                                        <div className="p-2 bg-blue-50 rounded">
+                                            <svg className="w-5 h-5 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                                            </svg>
+                                        </div>
+                                        <div>
+                                            <p className="font-medium text-gray-800">{record.description || `Record ${index + 1}`}</p>
+                                            <p className="text-sm text-gray-500">
+                                                {record.record_type && `Type: ${record.record_type}`}
+                                                {record.upload_date && ` • Uploaded: ${new Date(record.upload_date).toLocaleDateString()}`}
+                                            </p>
+                                        </div>
+                                    </div>
+                                    <a
+                                        href={record.file_url}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="px-3 py-1 text-sm font-medium text-blue-600 hover:text-blue-800 hover:underline"
+                                    >
+                                        View
+                                    </a>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            <div className="mt-6 flex justify-end gap-3">
                 <button
                     onClick={onClose}
                     className="bg-gray-200 text-gray-700 font-semibold px-6 py-2 rounded-lg hover:bg-gray-300 transition-colors duration-200"
@@ -82,15 +243,26 @@ export const PatientSearch = ({ initialSearchTarget, onExitPatientView, getPageT
             doc.text(`Generated on: ${new Date().toLocaleDateString()}`, 14, 38);
             
             // Prepare table data
-            const tableColumn = ["Name", "Patient ID", "Gender", "Phone", "Email", "Date of Birth"];
-            const tableRows = filteredPatients.map(patient => [
-                patient.name || 'N/A',
-                patient.patientId || 'N/A',
-                patient.gender || 'N/A',
-                patient.phone || 'N/A',
-                patient.email || 'N/A',
-                patient.dateOfBirth || 'N/A'
-            ]);
+            const tableColumn = ["Patient Name", "Contact Info", "Gender", "Medical Info", "Latest Appointment", "Doctor"];
+            const tableRows = filteredPatients.map(patient => {
+                const latestAppointment = patient.appointments && patient.appointments.length > 0 
+                    ? patient.appointments[0]
+                    : null;
+                const contactInfo = `${patient.phone}\n${patient.email}`;
+                const medicalInfo = `Blood: ${patient.medicalInfo?.bloodType || 'N/A'}\n${
+                    patient.medicalInfo?.allergies?.length 
+                        ? `Allergies: ${patient.medicalInfo.allergies.length}`
+                        : 'No allergies'
+                }`;
+                return [
+                    patient.name || 'N/A',
+                    contactInfo,
+                    patient.gender || 'N/A',
+                    medicalInfo,
+                    latestAppointment ? `${latestAppointment.date} ${latestAppointment.time}` : 'No appointments',
+                    latestAppointment?.doctor ? `${latestAppointment.doctor.name}\n${latestAppointment.doctor.specialization}` : 'N/A'
+                ];
+            });
             
             // Add table
             autoTable(doc, { 
@@ -127,10 +299,17 @@ export const PatientSearch = ({ initialSearchTarget, onExitPatientView, getPageT
 
     // Fetch patients who booked appointments to verified doctors for the hospital
     const fetchPatients = async () => {
-        const hospitalName = localStorage.getItem('hospitalName') || '';
+        const hospitalId = (localStorage.getItem('userId') || '').trim();
         
-        if (!hospitalName) {
-            setError('Hospital name not found. Please log in again.');
+        if (!hospitalId) {
+            setError('Hospital ID not found. Please log in again.');
+            setLoading(false);
+            return;
+        }
+
+        // Validate hospital ID format (24 character hex string)
+        if (!/^[0-9a-fA-F]{24}$/.test(hospitalId)) {
+            setError('Invalid Hospital ID format. Please log in again.');
             setLoading(false);
             return;
         }
@@ -139,20 +318,50 @@ export const PatientSearch = ({ initialSearchTarget, onExitPatientView, getPageT
         setError(null);
 
         try {
-            const response = await fetch(`/api/patients?hospitalName=${encodeURIComponent(hospitalName)}`);
-            
-            if (!response.ok) {
-                throw new Error(`HTTP error! status: ${response.status}`);
-            }
+            const response = await fetch(`/api/patients/${hospitalId}`, {
+                method: 'GET',
+                headers: {
+                    'Accept': 'application/json'
+                }
+            });
             
             const data = await response.json();
             
-            if (Array.isArray(data)) {
-                setPatients(data);
-                setFilteredPatients(data);
+            if (!response.ok) {
+                throw new Error(data.error || `HTTP error! status: ${response.status}`);
+            }
+            
+            if (data.success) {
+                const formattedPatients = data.patients.map(patient => ({
+                    id: patient.id,
+                    name: patient.name,
+                    patientId: patient.id,
+                    email: patient.email,
+                    phone: patient.phone,
+                    gender: patient.gender,
+                    dateOfBirth: patient.dateOfBirth ? new Date(patient.dateOfBirth).toLocaleDateString() : 'N/A',
+                    address: patient.address,
+                    emergencyContact: patient.emergencyContact,
+                    medicalInfo: patient.medicalInfo,
+                    status: patient.status,
+                    appointments: patient.appointments.map(apt => ({
+                        id: apt.id,
+                        date: new Date(apt.date).toLocaleDateString(),
+                        time: apt.time,
+                        type: apt.type,
+                        status: apt.status,
+                        doctor: apt.doctor,
+                        details: apt.reason,
+                        payment: apt.payment,
+                        medicalRecords: apt.medicalRecords
+                    }))
+                }));
+                
+                setPatients(formattedPatients);
+                setFilteredPatients(formattedPatients);
             } else {
-                console.error('Unexpected data format:', data);
-                setError('Unexpected data format received from server');
+                console.error('Failed to fetch patients:', data.error);
+                setError(data.error || 'Failed to fetch patients');
                 setPatients([]);
                 setFilteredPatients([]);
             }
@@ -316,32 +525,83 @@ export const PatientSearch = ({ initialSearchTarget, onExitPatientView, getPageT
                         <table className="min-w-full divide-y divide-gray-200">
                             <thead className="bg-gray-50">
                                 <tr>
-                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
-                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Patient ID</th>
-                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Gender</th>
-                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Phone</th>
-                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Email</th>
-                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date of Birth</th>
+                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Patient Information</th>
+                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Personal Info</th>
+                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Medical Info</th>
+                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Last Visit</th>
+                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Last Doctor</th>
+                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
                                 </tr>
                             </thead>
                             <tbody className="bg-white divide-y divide-gray-200">
-                                {filteredPatients.map(patient => (
+                                {filteredPatients.map(patient => {
+                                    const lastAppointment = patient.appointments[0];
+                                    const lastDoctor = lastAppointment?.doctor;
+                                    
+                                    return (
                                     <tr 
                                         key={patient.id} 
                                         className="hover:bg-gray-50 cursor-pointer"
                                         onClick={() => handleSelectPatient(patient)}
                                     >
-                                        <td className="px-6 py-4 whitespace-nowrap flex items-center gap-3">
-                                            <UserCircleIcon className="w-8 h-8 text-gray-400" />
-                                            <span className="font-medium text-gray-800">{patient.name || 'N/A'}</span>
+                                        <td className="px-6 py-4">
+                                            <div className="flex items-center gap-3">
+                                                <UserCircleIcon className="w-8 h-8 text-gray-400 flex-shrink-0" />
+                                                <div>
+                                                    {console.log('Rendering patient:', patient)}
+                                                    <div className="font-medium text-gray-800">{patient.name || 'N/A'}</div>
+                                                    <div className="text-sm text-gray-500">
+                                                        <div>{patient.phone}</div>
+                                                        <div className="text-xs">{patient.email}</div>
+                                                    </div>
+                                                </div>
+                                            </div>
                                         </td>
-                                        <td className="px-6 py-4 whitespace-nowrap text-gray-600">{patient.patientId || 'N/A'}</td>
-                                        <td className="px-6 py-4 whitespace-nowrap text-gray-600">{patient.gender || 'N/A'}</td>
-                                        <td className="px-6 py-4 whitespace-nowrap text-gray-600">{patient.phone || 'N/A'}</td>
-                                        <td className="px-6 py-4 whitespace-nowrap text-gray-600">{patient.email || 'N/A'}</td>
-                                        <td className="px-6 py-4 whitespace-nowrap text-gray-600">{patient.dateOfBirth || 'N/A'}</td>
+                                        <td className="px-6 py-4 whitespace-nowrap">
+                                            <div className="text-sm">
+                                                <div className="text-gray-900">{patient.gender || 'N/A'}</div>
+                                                <div className="text-gray-500">{patient.dateOfBirth}</div>
+                                            </div>
+                                        </td>
+                                        <td className="px-6 py-4 whitespace-nowrap">
+                                            <div className="text-sm">
+                                                <div className="text-gray-900">Blood: {patient.medicalInfo?.bloodType || 'N/A'}</div>
+                                                <div className="text-gray-500">
+                                                    {patient.medicalInfo?.allergies?.length 
+                                                        ? `${patient.medicalInfo.allergies.length} allergies`
+                                                        : 'No allergies'}
+                                                </div>
+                                            </div>
+                                        </td>
+                                        <td className="px-6 py-4 whitespace-nowrap">
+                                            {lastAppointment ? (
+                                                <div className="text-sm">
+                                                    <div className="text-gray-900">{lastAppointment.date}</div>
+                                                    <div className="text-gray-500">{lastAppointment.time}</div>
+                                                    <div className="text-xs text-gray-500">{lastAppointment.type}</div>
+                                                </div>
+                                            ) : 'No visits'}
+                                        </td>
+                                        <td className="px-6 py-4 whitespace-nowrap">
+                                            {lastDoctor ? (
+                                                <div className="text-sm">
+                                                    <div className="text-gray-900">{lastDoctor.name}</div>
+                                                    <div className="text-gray-500">{lastDoctor.specialization}</div>
+                                                    <div className="text-xs text-gray-500">{lastDoctor.specialty}</div>
+                                                </div>
+                                            ) : 'N/A'}
+                                        </td>
+                                        <td className="px-6 py-4 whitespace-nowrap">
+                                            <span className={`px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${
+                                                patient.status === 'active' 
+                                                    ? 'bg-green-100 text-green-800' 
+                                                    : 'bg-red-100 text-red-800'
+                                            }`}>
+                                                {patient.status}
+                                            </span>
+                                        </td>
                                     </tr>
-                                ))}
+                                )})}
                             </tbody>
                         </table>
                         {filteredPatients.length === 0 && !error && (

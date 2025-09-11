@@ -7,7 +7,11 @@ const UserSchema = new mongoose.Schema({
     hospitalName: { type: String, required: true },
     address: { type: String, required: true },
     contact: { type: String, required: true },
-    hospitalImage: { type: String }
+    hospitalImage: { type: String },
+    docters : {
+        type : Array,
+        default : []
+    }
 });
 
 UserSchema.pre('save', async function (next) {
