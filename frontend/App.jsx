@@ -4,7 +4,7 @@ import { PatientSearch } from './components/PatientSearch';
 import Dashboard from './components/Dashboard';
 import { AppointmentsDashboard } from './components/AppointmentsDashboard';
 import { DoctorManagement } from './components/DoctorManagement';
-import { LoginPage } from './components/LoginPage';
+import LoginPage from './components/LoginPage';
 import DoctorDetailsPage from './components/DoctorDetailsPage';
 import DoctorStatsPage from './components/DoctorStatsPage';
 import PatientDetailsPage from './components/PatientDetailsPage';

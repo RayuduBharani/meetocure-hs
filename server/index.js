@@ -11,6 +11,10 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
+// Serve uploaded files statically
+import path from 'path';
+app.use('/uploads', express.static(path.join(process.cwd(), 'uploads')));
+
 import appointmentsRoutes from './routes/appointments.js';
 import doctorsRoutes from './routes/doctors.js';
 import patientsRoutes from './routes/patients.js';

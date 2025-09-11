@@ -71,13 +71,13 @@ const TodaysSchedule = ({ appointments }) => {
         const statusStyle = statusStyles[app.status] || { text: '', bg: '' };
         const time = app.appointment_time || app.time;
         const patientName = app.patientInfo?.name || app.patient?.name || app.patientName || 'Unknown Patient';
-        const doctorName = app.doctor?.verificationDetails?.name || 
-                          app.doctor?.verificationDetails?.doctorName || 
-                          app.doctor?.verificationDetails?.fullName || 
-                          app.doctor?.name || 
-                          app.doctorName || 
-                          'Unknown Doctor';
-        
+        const doctorName = app.doctor?.verificationDetails?.name ||
+          app.doctor?.verificationDetails?.doctorName ||
+          app.doctor?.verificationDetails?.fullName ||
+          app.doctor?.name ||
+          app.doctorName ||
+          'Unknown Doctor';
+
         return (
           <div
             key={app._id || app.id}
@@ -119,6 +119,7 @@ const TodaysSchedule = ({ appointments }) => {
 
 const Dashboard = () => {
   const [appointments, setAppointments] = useState([]);
+  const [verifiedDoctors, setVerifiedDoctors] = useState([]);
   const [patients, setPatients] = useState([]);
   const [doctors, setDoctors] = useState([]);
   const [activities, setActivities] = useState([]);
@@ -131,62 +132,45 @@ const Dashboard = () => {
 
   // ✅ Fetch all data once on mount
   useEffect(() => {
+
     // Fetch today's appointments
     fetch('/api/appointments/today')
-      .then((res) => {
-        if (!res.ok) {
-          throw new Error(`HTTP error! status: ${res.status}`);
-        }
-        return res.json();
-      })
+      .then((res) => res.json())
       .then((data) => {
-        // Handle both array response and success/data response format
         const appointments = Array.isArray(data) ? data : (data.data || []);
-        console.log('Appointments data:', appointments);
-        if (appointments.length > 0) {
-          console.log('First appointment structure:', appointments[0]);
-        }
         setAppointments(appointments);
       })
-      .catch((error) => {
-        console.error('Error fetching today\'s appointments:', error);
-        setAppointments([]); // Set empty array as fallback
-      });
+      .catch(() => setAppointments([]));
 
     // Fetch patients
     fetch('/api/patients')
-      .then((res) => {
-        if (!res.ok) {
-          throw new Error(`HTTP error! status: ${res.status}`);
-        }
-        return res.json();
-      })
+      .then((res) => res.json())
       .then((data) => {
         const patients = Array.isArray(data) ? data : (data.data || []);
         setPatients(patients);
       })
-      .catch((error) => {
-        console.error('Error fetching patients:', error);
-        setPatients([]);
-      });
+      .catch(() => setPatients([]));
 
     const hospitalName = localStorage.getItem('hospitalName') || '';
 
+    // Fetch verified doctors for this hospital
+    fetch(`/api/doctors?hospitalName=${encodeURIComponent(hospitalName)}&verified=true`)
+      .then((res) => res.json())
+      .then((data) => {
+        const verified = Array.isArray(data) ? data : [];
+        setVerifiedDoctors(verified);
+      })
+      .catch(() => setVerifiedDoctors([]));
+
     // Fetch only unverified doctors for this hospital
     fetch(`/api/doctors?hospitalName=${encodeURIComponent(hospitalName)}&verified=false`)
-      .then((res) => {
-        if (!res.ok) {
-          throw new Error(`HTTP error! status: ${res.status}`);
-        }
-        return res.json();
-      })
+      .then((res) => res.json())
       .then((data) => {
         const unverifiedDoctors = Array.isArray(data) ? data : [];
         setDoctors(unverifiedDoctors);
         setUnverifiedDoctors(unverifiedDoctors);
       })
-      .catch((error) => {
-        console.error('Error fetching doctors:', error);
+      .catch(() => {
         setDoctors([]);
         setUnverifiedDoctors([]);
       });
@@ -239,15 +223,15 @@ const Dashboard = () => {
 
   const handleVerifyDoctor = async (doctorVerificationId) => {
     try {
-      const response = await fetch(`/api/doctors/${doctorVerificationId}/verify`, { 
+      const response = await fetch(`/api/doctors/${doctorVerificationId}/verify`, {
         method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',
         },
       });
-      
+
       const data = await response.json();
-      
+
       if (response.ok && data.success) {
         alert('Doctor verified successfully!');
         setSelectedDoctor(null);
@@ -263,18 +247,18 @@ const Dashboard = () => {
 
   const handleRejectDoctor = async (doctorVerificationId) => {
     const reason = prompt('Please provide a reason for rejection (optional):');
-    
+
     try {
-      const response = await fetch(`/api/doctors/${doctorVerificationId}/reject`, { 
+      const response = await fetch(`/api/doctors/${doctorVerificationId}/reject`, {
         method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({ reason: reason || '' }),
       });
-      
+
       const data = await response.json();
-      
+
       if (response.ok && data.success) {
         alert('Doctor rejected successfully!');
         setSelectedDoctor(null);
@@ -294,21 +278,19 @@ const Dashboard = () => {
   const totalAppointmentsCount = Array.isArray(appointments) ? appointments.length : 0;
   const cancelledAppointmentsCount = Array.isArray(appointments) ? appointments.filter(a => a.status === 'cancelled' || a.status === 'Cancelled').length : 0;
 
-  // Helper: get start/end of current week (Monday-Sunday)
-  const now = new Date();
-  const dayOfWeek = now.getDay();
-  const monday = new Date(now);
-  monday.setDate(now.getDate() - ((dayOfWeek + 6) % 7));
-  monday.setHours(0, 0, 0, 0);
-  const sunday = new Date(monday);
-  sunday.setDate(monday.getDate() + 6);
-  sunday.setHours(23, 59, 59, 999);
-
-  // Filter appointments for current week
-  const weeklyAppointments = Array.isArray(appointments) ? appointments.filter(app => {
-    const appDate = new Date(app.appointment_date || app.date);
-    return appDate >= monday && appDate <= sunday;
-  }) : [];
+  // Filter today's appointments to only those with verified doctors in the logged-in hospital
+  const hospitalName = localStorage.getItem('hospitalName') || '';
+  const verifiedDoctorIds = verifiedDoctors.map(doc => doc._id);
+  const todaysVerifiedAppointments = Array.isArray(appointments)
+    ? appointments.filter(app => {
+      // Doctor must be verified and match hospital
+      const doctor = app.doctor || app.doctorInfo || {};
+      return (
+        verifiedDoctorIds.includes(doctor._id) &&
+        (doctor.hospitalName === hospitalName)
+      );
+    })
+    : [];
 
   return (
     <>
@@ -342,12 +324,12 @@ const Dashboard = () => {
           />
         </div>
 
-        {/* Today's Appointments */}
+        {/* Today's Appointments (only patients with verified doctors in logged-in hospital) */}
         <div className="bg-white p-8 rounded-2xl shadow-md border border-gray-200/80 mb-8">
           <h3 className="text-2xl font-bold text-gray-800 mb-6">
             Today's Appointments
           </h3>
-          <TodaysSchedule appointments={appointments} />
+          <TodaysSchedule appointments={todaysVerifiedAppointments} />
         </div>
 
         {/* Unverified Doctors Section */}
@@ -363,7 +345,7 @@ const Dashboard = () => {
                 // Extract doctor verification and doctor info from the new structure
                 const doctorVerification = doctorData.doctorVerification;
                 const doctor = doctorData.doctor;
-                
+
                 return (
                   <div
                     key={doctorVerification._id}
@@ -399,82 +381,7 @@ const Dashboard = () => {
           </div>
         </div>
 
-        {/* All Appointments */}
-        <div className="bg-white p-8 rounded-2xl shadow-md border border-gray-200/80">
-          <h3 className="text-2xl font-bold text-gray-800 mb-6">
-            All Appointments
-          </h3>
-          {appointments.length === 0 ? (
-            <div className="text-center py-12">
-              <AppointmentIcon className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-              <p className="text-gray-500 text-lg">No appointments found.</p>
-            </div>
-          ) : (
-            <div className="space-y-4">
-              {appointments.map((app) => {
-                const statusStyle = statusStyles[app.status] || { text: '', bg: '' };
-                const time = app.appointment_time || app.time;
-                const date = app.appointment_date || app.date;
-                const patientName = app.patientInfo?.name || app.patient?.name || app.patientName || 'Unknown Patient';
-                const doctorName = app.doctor?.verificationDetails?.name || 
-                                  app.doctor?.verificationDetails?.doctorName || 
-                                  app.doctor?.verificationDetails?.fullName || 
-                                  app.doctor?.name || 
-                                  app.doctorName || 
-                                  'Unknown Doctor';
-                
-                return (
-                  <div
-                    key={app._id || app.id}
-                    className="flex items-center gap-6 p-6 rounded-xl hover:bg-gray-50/80 transition-colors border border-gray-200/60"
-                  >
-                    <div className="w-20 text-center">
-                      <p className="font-bold text-[#062e3e] text-lg">
-                        {time && time.split(' ')[0]}
-                      </p>
-                      <p className="text-sm text-gray-500">
-                        {time && time.split(' ')[1]}
-                      </p>
-                      <p className="text-xs text-gray-400 mt-1">
-                        {date}
-                      </p>
-                    </div>
-                    <div className="w-1 h-16 bg-gray-200 rounded-full"></div>
-                    <div className="flex-1 flex items-center justify-between">
-                      <div className="flex items-center gap-4">
-                        <UserCircleIcon className="w-12 h-12 text-gray-400 shrink-0" />
-                        <div>
-                          <p className="font-semibold text-gray-800 text-lg">
-                            {patientName}
-                          </p>
-                          <p className="text-gray-500">
-                            with Dr. {doctorName}
-                          </p>
-                          <p className="text-sm text-gray-400">
-                            {app.reason || 'General consultation'}
-                          </p>
-                        </div>
-                      </div>
-                      <div className="flex items-center gap-4">
-                        <span
-                          className={`px-4 py-2 text-sm font-semibold rounded-full ${statusStyle.bg} ${statusStyle.text}`}
-                        >
-                          {app.status}
-                        </span>
-                        <button
-                          onClick={() => navigate(`/appointment/${app._id || app.id}`)}
-                          className="px-4 py-2 bg-[#062e3e] text-white rounded-lg hover:bg-[#0a3d4f] transition-colors text-sm font-medium"
-                        >
-                          View Details
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          )}
-        </div>
+        {/* // ...existing code... */}
       </div>
     </>
   );

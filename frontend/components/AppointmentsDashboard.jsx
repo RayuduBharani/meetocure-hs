@@ -97,39 +97,77 @@ export const AppointmentsDashboard = ({ onNavigateToPatient }) => {
         searchValue={searchQuery}
         onSearchChange={setSearchQuery}
       />
-      <div className="p-8">
-        <div className="bg-white p-6 rounded-2xl shadow-md border border-gray-200/80">
-          <h2 className="text-xl font-bold text-gray-800 mb-4">Today's Appointments</h2>
-          <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-gray-200">
-              <thead className="bg-gray-50">
-                <tr>
-                  <th className="px-32 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Patient</th>
-                  <th className="px-8 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Doctor</th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-                </tr>
-              </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
-                {filteredAppointments.map(app => (
-                  <tr key={app._id || app.id} className="hover:bg-gray-50">
-                    <td className="px-32 py-4 whitespace-nowrap flex items-center gap-3">
-                      <UserCircleIcon className="w-8 h-8 text-gray-400" />
-                      <span className="font-medium text-gray-800">{app.patient.name}</span>
-                    </td>
-                    <td className="px-8 py-4 whitespace-nowrap text-gray-600">{app.doctor.name}</td>
-                    <td className="px-4 py-4 whitespace-nowrap text-gray-600">{app.date}</td>
-                    <td className="px-4 py-4 whitespace-nowrap text-right">
-                      <span className={`px-3 py-1 text-sm font-semibold rounded-full ${statusStyles[app.status]?.bg} ${statusStyles[app.status]?.text}`}>{app.status}</span>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-            {filteredAppointments.length === 0 && (
-              <div className="text-center text-gray-500 py-8">No appointments found.</div>
-            )}
-          </div>
+      <div className="p-6">
+        {/* All Appointments Section with vertical scrollbar only for the section */}
+        <div className="bg-white p-6 rounded-2xl shadow-md border border-gray-200/90">
+          <h3 className="text-2xl font-bold text-gray-800 mb-6">
+            All Appointments
+          </h3>
+          {appointments.length === 0 ? (
+            <div className="text-center py-12">
+              <p className="text-gray-500 text-lg">No appointments found.</p>
+            </div>
+          ) : (
+            <div className="space-y-4 max-h-[500px] overflow-y-auto pr-2 scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100">
+              {appointments.map((app) => {
+                const statusStyle = statusStyles[app.status] || { text: '', bg: '' };
+                const time = app.appointment_time || app.time;
+                const date = app.appointment_date || app.date;
+                const patientName = app.patientInfo?.name || app.patient?.name || app.patientName || 'Unknown Patient';
+                const doctorName = app.doctor?.verificationDetails?.name ||
+                  app.doctor?.verificationDetails?.doctorName ||
+                  app.doctor?.verificationDetails?.fullName ||
+                  app.doctor?.name ||
+                  app.doctorName ||
+                  'Unknown Doctor';
+                return (
+                  <div
+                    key={app._id || app.id}
+                    className="flex items-center gap-6 p-6 rounded-xl hover:bg-gray-50/80 transition-colors border border-gray-200/60"
+                  >
+                    <div className="w-21 text-center">
+                      <p className="font-bold text-[#062e3e] text-lg">
+                        {time && `${time.split(' ')[0]} ${time.split(' ')[1]}`}
+                      </p>
+                      <p className="text-xs text-gray-400 mt-1">
+                        {date && date.substring(0, 10)}
+                      </p>
+                    </div>
+                    <div className="w-1 h-16 bg-gray-200 rounded-full"></div>
+                    <div className="flex-1 flex items-center justify-between">
+                      <div className="flex items-center gap-4">
+                        <UserCircleIcon className="w-12 h-12 text-gray-400 shrink-0" />
+                        <div>
+                          <p className="font-semibold text-gray-800 text-lg">
+                            {patientName}
+                          </p>
+                          <p className="text-gray-500">
+                            with Dr. {doctorName}
+                          </p>
+                          <p className="text-sm text-gray-400">
+                            {app.reason || 'General consultation'}
+                          </p>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-4">
+                        <span
+                          className={`px-4 py-2 text-sm font-semibold rounded-full ${statusStyle.bg} ${statusStyle.text}`}
+                        >
+                          {app.status}
+                        </span>
+                        <button
+                          onClick={() => window.location.href = `/appointment/${app._id || app.id}`}
+                          className="px-4 py-2 bg-[#062e3e] text-white rounded-lg hover:bg-[#0a3d4f] transition-colors text-sm font-medium"
+                        >
+                          View Details
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
         </div>
       </div>
     </>

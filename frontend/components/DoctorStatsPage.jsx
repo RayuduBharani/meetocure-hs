@@ -105,10 +105,7 @@ const DoctorStatsPage = () => {
                     </div>
                 )}
                 
-                {/* Debug Info */}
-                <div className="bg-blue-50 border border-blue-200 text-blue-700 px-4 py-3 rounded mb-4">
-                    <strong>Debug Info:</strong> Doctor ID: {doctorId}
-                </div>
+                
                 {/* Stats Overview */}
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-6 mb-8">
                     <div className="bg-white shadow rounded-xl p-6 flex flex-col items-center justify-center">

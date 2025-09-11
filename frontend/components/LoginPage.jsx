@@ -1,9 +1,10 @@
-import React, { useState } from 'react';
-import { MeetoCureLogoIcon, EmailIcon, HospitalBuildingIcon, LockIcon } from './icons/Icons';
-
-export const LoginPage = ({ onLogin }) => {
+import { useState } from 'react';
+import React from "react";
+import { HospitalBuildingIcon, EmailIcon, LockIcon } from './icons/Icons';
+import RegisterPage from './RegisterPage';
+const LoginPage = ({ onLogin }) => {
     const [isLoading, setIsLoading] = useState(false);
-
+    const [showRegister, setShowRegister] = useState(false);
     // Form state
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
@@ -13,7 +14,7 @@ export const LoginPage = ({ onLogin }) => {
         e.preventDefault();
         setIsLoading(true);
         try {
-            const res = await fetch('http://localhost:5001/api/auth/login', {
+            const res = await fetch('/api/auth/login', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ email, password, hospitalName: HospitalName })
@@ -21,6 +22,13 @@ export const LoginPage = ({ onLogin }) => {
             const data = await res.json();
             if (res.status === 409) {
                 alert(data.error || 'This email is already registered for another hospital.');
+            } else if (res.status === 404 || (data.error && data.error.toLowerCase().includes('not found'))) {
+                // Hospital/email not found, show register page
+                setShowRegister({
+                    hospitalName: HospitalName,
+                    email,
+                    password
+                });
             } else if (data.success && data.token) {
                 localStorage.setItem('token', data.token);
                 localStorage.setItem('hospitalName', data.hospitalName);
@@ -36,6 +44,9 @@ export const LoginPage = ({ onLogin }) => {
 
     const inputClasses = "block w-full rounded-lg border border-gray-300 bg-white py-3 pr-3 pl-10 text-gray-900 placeholder:text-gray-400 focus:outline-none focus:border-[#062e3e] focus:ring-1 focus:ring-[#062e3e] sm:text-sm transition-colors";
 
+    if (showRegister) {
+        return <RegisterPage onRegister={onLogin} initialData={showRegister} />;
+    }
     return (
         <div className="flex flex-col items-center justify-center min-h-screen bg-gray-50 p-4">
             <div className="w-full max-w-md mx-auto">
@@ -52,9 +63,7 @@ export const LoginPage = ({ onLogin }) => {
                 <div className="bg-white p-8 rounded-2xl shadow-lg border border-gray-200/80">
                     <form className="space-y-6" onSubmit={handleSubmit}>
                         <div>
-                            <label htmlFor="email" className="block text-sm font-medium text-gray-700">
-                                Hospital Name
-                            </label>
+                            <label className="block text-sm font-medium text-gray-700">Hospital Name</label>
                             <div className="relative mt-1">
                                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                                     <HospitalBuildingIcon className="w-5 h-5 text-gray-400" />
@@ -129,3 +138,5 @@ export const LoginPage = ({ onLogin }) => {
         </div>
     );
 };
+
+export default LoginPage;
