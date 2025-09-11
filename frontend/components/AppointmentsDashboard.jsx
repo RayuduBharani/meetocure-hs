@@ -54,14 +54,30 @@ const AppointmentRow = ({ appointment, onCheckIn, onViewDetails }) => {
   );
 };
 
+
 export const AppointmentsDashboard = ({ onNavigateToPatient }) => {
   const [appointments, setAppointments] = useState([]);
   const [searchQuery, setSearchQuery] = useState('');
+  const [doctorMap, setDoctorMap] = useState({});
 
   useEffect(() => {
-    fetch('/api/appointments/today')
+    const hospitalName = localStorage.getItem('hospitalName') || '';
+    fetch(`/api/dashboard/verified-doctors-all-appointments?hospitalName=${encodeURIComponent(hospitalName)}`)
       .then(res => res.json())
-      .then(setAppointments)
+      .then(data => {
+        setAppointments(Array.isArray(data.appointments) ? data.appointments : []);
+        // Build doctorId -> name map
+        const map = {};
+        (data.appointments || []).forEach(app => {
+          // Try to get doctorId and name from each appointment
+          const doctorId = app.doctor?._id || app.doctor?.id || app.doctorId;
+          const doctorName = app.doctor?.verificationDetails?.name || app.doctor?.name || app.doctorName;
+          if (doctorId && doctorName) {
+            map[doctorId] = doctorName;
+          }
+        });
+        setDoctorMap(map);
+      })
       .catch(() => setAppointments([]));
   }, []);
 
@@ -80,8 +96,8 @@ export const AppointmentsDashboard = ({ onNavigateToPatient }) => {
     const query = searchQuery.toLowerCase();
     if (!query) return appointments;
     return appointments.filter(app =>
-      app.patient.name.toLowerCase().includes(query) ||
-      app.doctor.name.toLowerCase().includes(query)
+      (app.patient?.name || '').toLowerCase().includes(query) ||
+      (app.doctor?.name || '').toLowerCase().includes(query)
     );
   }, [appointments, searchQuery]);
 
@@ -114,12 +130,15 @@ export const AppointmentsDashboard = ({ onNavigateToPatient }) => {
                 const time = app.appointment_time || app.time;
                 const date = app.appointment_date || app.date;
                 const patientName = app.patientInfo?.name || app.patient?.name || app.patientName || 'Unknown Patient';
-                const doctorName = app.doctor?.verificationDetails?.name ||
-                  app.doctor?.verificationDetails?.doctorName ||
-                  app.doctor?.verificationDetails?.fullName ||
-                  app.doctor?.name ||
-                  app.doctorName ||
-                  'Unknown Doctor';
+                // Try to get doctor name from appointment, else from doctorMap using doctorId
+                let doctorName = app.doctor?.verificationDetails?.name || app.doctor?.name || app.doctorName;
+                if (!doctorName) {
+                  const doctorId = app.doctor?._id || app.doctor?.id || app.doctorId;
+                  if (doctorId && doctorMap[doctorId]) {
+                    doctorName = doctorMap[doctorId];
+                  }
+                }
+                doctorName = doctorName || 'Verified Doctor';
                 return (
                   <div
                     key={app._id || app.id}
@@ -142,7 +161,7 @@ export const AppointmentsDashboard = ({ onNavigateToPatient }) => {
                             {patientName}
                           </p>
                           <p className="text-gray-500">
-                            with Dr. {doctorName}
+                            with a {doctorName}
                           </p>
                           <p className="text-sm text-gray-400">
                             {app.reason || 'General consultation'}
@@ -173,3 +192,4 @@ export const AppointmentsDashboard = ({ onNavigateToPatient }) => {
     </>
   );
 }
+export default AppointmentsDashboard;

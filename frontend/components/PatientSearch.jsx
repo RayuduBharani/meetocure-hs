@@ -1,10 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
-
+// import React, { useState, useEffect } from "react";
 import { AppointmentHistoryItem } from './AppointmentHistoryItem';
 import { Header } from './Header';
 import { UserCircleIcon } from './icons/Icons';
+
+
 
 const AppointmentDetailModal = ({ appointment, onClose }) => (
     <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex justify-center items-center overflow-y-auto">
@@ -13,15 +15,15 @@ const AppointmentDetailModal = ({ appointment, onClose }) => (
                 <h3 className="text-xl font-bold text-gray-800">Appointment Details</h3>
                 <button onClick={onClose} className="text-gray-400 hover:text-gray-600 text-2xl">&times;</button>
             </div>
-            
+
             {/* Doctor Information */}
             <div className="mb-6">
                 <h4 className="text-lg font-semibold text-gray-800 mb-3">Doctor Information</h4>
                 <div className="bg-gray-50 p-4 rounded-lg border border-gray-200">
                     <div className="flex items-center gap-4 mb-3">
                         {appointment.doctor.profileImage ? (
-                            <img 
-                                src={appointment.doctor.profileImage} 
+                            <img
+                                src={appointment.doctor.profileImage}
                                 alt={appointment.doctor.name}
                                 className="w-16 h-16 rounded-full object-cover"
                             />
@@ -106,12 +108,11 @@ const AppointmentDetailModal = ({ appointment, onClose }) => (
                             </p>
                             <p className="text-sm">
                                 <span className="text-gray-600">Status:</span>
-                                <span className={`ml-2 px-2 py-1 rounded-full text-xs font-semibold ${
-                                    appointment.status === 'completed' ? 'bg-green-100 text-green-800' :
+                                <span className={`ml-2 px-2 py-1 rounded-full text-xs font-semibold ${appointment.status === 'completed' ? 'bg-green-100 text-green-800' :
                                     appointment.status === 'confirmed' ? 'bg-blue-100 text-blue-800' :
-                                    appointment.status === 'pending' ? 'bg-yellow-100 text-yellow-800' :
-                                    'bg-red-100 text-red-800'
-                                }`}>
+                                        appointment.status === 'pending' ? 'bg-yellow-100 text-yellow-800' :
+                                            'bg-red-100 text-red-800'
+                                    }`}>
                                     {appointment.status}
                                 </span>
                             </p>
@@ -124,81 +125,50 @@ const AppointmentDetailModal = ({ appointment, onClose }) => (
                         </div>
                     </div>
 
-                    {/* Payment Information */}
-                    <div className="bg-gray-50 p-4 rounded-lg border border-gray-200">
-                        <p className="font-medium text-gray-700 mb-2">Payment Information</p>
-                        <div className="space-y-2">
-                            <p className="text-sm">
-                                <span className="text-gray-600">Amount:</span>
-                                <span className="ml-2 font-semibold text-gray-800">
-                                    {appointment.payment?.amount || 0} {appointment.payment?.currency || 'USD'}
-                                </span>
-                            </p>
-                            <p className="text-sm">
-                                <span className="text-gray-600">Status:</span>
-                                <span className={`ml-2 px-2 py-1 rounded-full text-xs font-semibold ${
-                                    (appointment.payment?.status === 'paid' || appointment.payment?.status === 'completed') ? 'bg-green-100 text-green-800' :
-                                    appointment.payment?.status === 'pending' ? 'bg-yellow-100 text-yellow-800' :
-                                    'bg-red-100 text-red-800'
-                                }`}>
-                                    {appointment.payment?.status || 'pending'}
-                                </span>
-                            </p>
-                            {appointment.payment?.transaction_id && (
-                                <p className="text-sm">
-                                    <span className="text-gray-600">Transaction ID:</span>
-                                    <span className="ml-2 text-gray-800">{appointment.payment.transaction_id}</span>
-                                </p>
-                            )}
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            {/* Medical Records */}
-            {appointment.medicalRecords && appointment.medicalRecords.length > 0 && (
-                <div className="mb-6">
-                    <h4 className="text-lg font-semibold text-gray-800 mb-3">Medical Records</h4>
-                    <div className="bg-gray-50 p-4 rounded-lg border border-gray-200">
-                        <div className="grid grid-cols-1 gap-3">
-                            {appointment.medicalRecords.map((record, index) => (
-                                <div key={record._id || index} className="flex items-center justify-between p-2 bg-white rounded border border-gray-200">
-                                    <div className="flex items-center space-x-3">
-                                        <div className="p-2 bg-blue-50 rounded">
-                                            <svg className="w-5 h-5 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
-                                            </svg>
-                                        </div>
+                    {filteredPatients.map(patient => {
+                        return (
+                            <tr
+                                key={patient._id || patient.patient}
+                                className="hover:bg-gray-50 cursor-pointer"
+                                onClick={() => handleSelectPatient(patient)}
+                            >
+                                <td className="px-6 py-4">
+                                    <div className="flex items-center gap-3">
+                                        {patient.photo ? (
+                                            <img src={patient.photo} alt="Profile" className="w-8 h-8 rounded-full object-cover flex-shrink-0" />
+                                        ) : (
+                                            <UserCircleIcon className="w-8 h-8 text-gray-400 flex-shrink-0" />
+                                        )}
                                         <div>
-                                            <p className="font-medium text-gray-800">{record.description || `Record ${index + 1}`}</p>
-                                            <p className="text-sm text-gray-500">
-                                                {record.record_type && `Type: ${record.record_type}`}
-                                                {record.upload_date && ` • Uploaded: ${new Date(record.upload_date).toLocaleDateString()}`}
-                                            </p>
+                                            <div className="font-medium text-gray-800">{patient.name || 'N/A'}</div>
+                                            <div className="text-sm text-gray-500">
+                                                <div>{patient.phone}</div>
+                                                <div className="text-xs">{patient.dob ? new Date(patient.dob).toLocaleDateString() : ''}</div>
+                                            </div>
                                         </div>
                                     </div>
-                                    <a
-                                        href={record.file_url}
-                                        target="_blank"
-                                        rel="noopener noreferrer"
-                                        className="px-3 py-1 text-sm font-medium text-blue-600 hover:text-blue-800 hover:underline"
-                                    >
-                                        View
-                                    </a>
-                                </div>
-                            ))}
-                        </div>
-                    </div>
-                </div>
-            )}
-
-            <div className="mt-6 flex justify-end gap-3">
-                <button
+                                </td>
+                                <td className="px-6 py-4 whitespace-nowrap">
+                                    <div className="text-sm">
+                                        <div className="text-gray-900">{patient.gender || 'N/A'}</div>
+                                        <div className="text-gray-500">{patient.dob ? new Date(patient.dob).toLocaleDateString() : ''}</div>
+                                    </div>
+                                </td>
+                                <td className="px-6 py-4 whitespace-nowrap">
+                                    <div className="text-sm text-gray-500">No medical info</div>
+                                </td>
+                                <td className="px-6 py-4 whitespace-nowrap">
+                                    {patient.updatedAt ? new Date(patient.updatedAt).toLocaleString() : 'N/A'}
+                                </td>
+                                <td className="px-6 py-4 whitespace-nowrap">N/A</td>
+                                <td className="px-6 py-4 whitespace-nowrap">N/A</td>
+                            </tr>
+                        )
+                    })}
                     onClick={onClose}
                     className="bg-gray-200 text-gray-700 font-semibold px-6 py-2 rounded-lg hover:bg-gray-300 transition-colors duration-200"
-                >
-                    Close
-                </button>
+                </div>
+                Close
             </div>
         </div>
     </div>
@@ -226,34 +196,33 @@ export const PatientSearch = ({ initialSearchTarget, onExitPatientView, getPageT
 
         try {
             const doc = new jsPDF();
-            
+
             // Add title
             doc.setFontSize(20);
             doc.text('Patient Directory', 14, 22);
-            
+
             // Add hospital name if available
             const hospitalName = localStorage.getItem('hospitalName');
             if (hospitalName) {
                 doc.setFontSize(12);
                 doc.text(`Hospital: ${hospitalName}`, 14, 30);
             }
-            
+
             // Add generation date
             doc.setFontSize(10);
             doc.text(`Generated on: ${new Date().toLocaleDateString()}`, 14, 38);
-            
+
             // Prepare table data
             const tableColumn = ["Patient Name", "Contact Info", "Gender", "Medical Info", "Latest Appointment", "Doctor"];
             const tableRows = filteredPatients.map(patient => {
-                const latestAppointment = patient.appointments && patient.appointments.length > 0 
+                const latestAppointment = patient.appointments && patient.appointments.length > 0
                     ? patient.appointments[0]
                     : null;
                 const contactInfo = `${patient.phone}\n${patient.email}`;
-                const medicalInfo = `Blood: ${patient.medicalInfo?.bloodType || 'N/A'}\n${
-                    patient.medicalInfo?.allergies?.length 
-                        ? `Allergies: ${patient.medicalInfo.allergies.length}`
-                        : 'No allergies'
-                }`;
+                const medicalInfo = `Blood: ${patient.medicalInfo?.bloodType || 'N/A'}\n${patient.medicalInfo?.allergies?.length
+                    ? `Allergies: ${patient.medicalInfo.allergies.length}`
+                    : 'No allergies'
+                    }`;
                 return [
                     patient.name || 'N/A',
                     contactInfo,
@@ -263,17 +232,17 @@ export const PatientSearch = ({ initialSearchTarget, onExitPatientView, getPageT
                     latestAppointment?.doctor ? `${latestAppointment.doctor.name}\n${latestAppointment.doctor.specialization}` : 'N/A'
                 ];
             });
-            
+
             // Add table
-            autoTable(doc, { 
-                head: [tableColumn], 
+            autoTable(doc, {
+                head: [tableColumn],
                 body: tableRows,
                 startY: 45,
                 styles: { fontSize: 8 },
                 headStyles: { fillColor: [66, 139, 202] },
                 alternateRowStyles: { fillColor: [245, 245, 245] }
             });
-            
+
             // Add footer
             const pageCount = doc.internal.getNumberOfPages();
             for (let i = 1; i <= pageCount; i++) {
@@ -281,7 +250,7 @@ export const PatientSearch = ({ initialSearchTarget, onExitPatientView, getPageT
                 doc.setFontSize(8);
                 doc.text(`Page ${i} of ${pageCount}`, doc.internal.pageSize.width - 30, doc.internal.pageSize.height - 10);
             }
-            
+
             doc.save(`patients_${hospitalName || 'directory'}_${new Date().toISOString().split('T')[0]}.pdf`);
         } catch (error) {
             console.error('Error generating PDF:', error);
@@ -300,7 +269,7 @@ export const PatientSearch = ({ initialSearchTarget, onExitPatientView, getPageT
     // Fetch patients who booked appointments to verified doctors for the hospital
     const fetchPatients = async () => {
         const hospitalId = (localStorage.getItem('userId') || '').trim();
-        
+
         if (!hospitalId) {
             setError('Hospital ID not found. Please log in again.');
             setLoading(false);
@@ -318,58 +287,13 @@ export const PatientSearch = ({ initialSearchTarget, onExitPatientView, getPageT
         setError(null);
 
         try {
-            const response = await fetch(`/api/patients/${hospitalId}`, {
-                method: 'GET',
-                headers: {
-                    'Accept': 'application/json'
-                }
-            });
-            
-            const data = await response.json();
-            
-            if (!response.ok) {
-                throw new Error(data.error || `HTTP error! status: ${response.status}`);
-            }
-            
-            if (data.success) {
-                const formattedPatients = data.patients.map(patient => ({
-                    id: patient.id,
-                    name: patient.name,
-                    patientId: patient.id,
-                    email: patient.email,
-                    phone: patient.phone,
-                    gender: patient.gender,
-                    dateOfBirth: patient.dateOfBirth ? new Date(patient.dateOfBirth).toLocaleDateString() : 'N/A',
-                    address: patient.address,
-                    emergencyContact: patient.emergencyContact,
-                    medicalInfo: patient.medicalInfo,
-                    status: patient.status,
-                    appointments: patient.appointments.map(apt => ({
-                        id: apt.id,
-                        date: new Date(apt.date).toLocaleDateString(),
-                        time: apt.time,
-                        type: apt.type,
-                        status: apt.status,
-                        doctor: apt.doctor,
-                        details: apt.reason,
-                        payment: apt.payment,
-                        medicalRecords: apt.medicalRecords
-                    }))
-                }));
-                
-                setPatients(formattedPatients);
-                setFilteredPatients(formattedPatients);
-            } else {
-                console.error('Failed to fetch patients:', data.error);
-                setError(data.error || 'Failed to fetch patients');
-                setPatients([]);
-                setFilteredPatients([]);
-            }
+            const hospitalName = localStorage.getItem('hospitalName') || '';
+            const res = await fetch(`/api/dashboard/verified-doctors-patients?hospitalName=${encodeURIComponent(hospitalName)}`);
+            if (!res.ok) throw new Error('Failed to fetch patients');
+            const data = await res.json();
+            setPatients(Array.isArray(data.patients) ? data.patients : []);
         } catch (err) {
-            console.error("Error fetching patients:", err);
-            setError('Failed to fetch patients. Please try again.');
-            setPatients([]);
-            setFilteredPatients([]);
+            setError(err.message);
         } finally {
             setLoading(false);
         }
@@ -458,7 +382,7 @@ export const PatientSearch = ({ initialSearchTarget, onExitPatientView, getPageT
                             <div className="space-y-3">
                                 {selectedPatient.appointments && selectedPatient.appointments.length > 0 ? selectedPatient.appointments.map(app => (
                                     <AppointmentHistoryItem key={app.id} appointment={app} onViewDetails={handleViewAppointmentDetails} />
-                                )) : <p className="text-gray-500 p-4 text-center">No appointment history found for this patient.</p>}
+                                )) : <p className="text-gray-500 p-4 text-center"></p>}
                             </div>
                         </div>
                     </div>
@@ -515,7 +439,7 @@ export const PatientSearch = ({ initialSearchTarget, onExitPatientView, getPageT
                             </button>
                         </div>
                     </div>
-                    
+
                     {error && (
                         <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
                             {error}
@@ -525,83 +449,107 @@ export const PatientSearch = ({ initialSearchTarget, onExitPatientView, getPageT
                         <table className="min-w-full divide-y divide-gray-200">
                             <thead className="bg-gray-50">
                                 <tr>
-                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Patient Information</th>
-                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Personal Info</th>
-                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Medical Info</th>
-                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Last Visit</th>
-                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Last Doctor</th>
-                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                                    <th className="px-10 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-1/3">Patient Information</th>
+                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-1/6">Personal Info</th>
+                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-1/6">Medical Info</th>
+                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-1/6">Last Visit</th>
+                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-1/6">Status</th>
                                 </tr>
                             </thead>
                             <tbody className="bg-white divide-y divide-gray-200">
                                 {filteredPatients.map(patient => {
-                                    const lastAppointment = patient.appointments[0];
-                                    const lastDoctor = lastAppointment?.doctor;
-                                    
                                     return (
-                                    <tr 
-                                        key={patient.id} 
-                                        className="hover:bg-gray-50 cursor-pointer"
-                                        onClick={() => handleSelectPatient(patient)}
-                                    >
-                                        <td className="px-6 py-4">
-                                            <div className="flex items-center gap-3">
-                                                <UserCircleIcon className="w-8 h-8 text-gray-400 flex-shrink-0" />
-                                                <div>
-                                                    {console.log('Rendering patient:', patient)}
-                                                    <div className="font-medium text-gray-800">{patient.name || 'N/A'}</div>
-                                                    <div className="text-sm text-gray-500">
-                                                        <div>{patient.phone}</div>
-                                                        <div className="text-xs">{patient.email}</div>
+                                        <tr
+                                            key={patient.id}
+                                            className="hover:bg-gray-50 cursor-pointer"
+                                            onClick={() => handleSelectPatient(patient)}
+                                        >
+                                            <td className="px-10 py-4 w-1/3">
+                                                <div className="flex items-center gap-3">
+                                                    <UserCircleIcon className="w-8 h-8 text-gray-400 flex-shrink-0" />
+                                                    <div>
+                                                        <div className="font-medium text-gray-800">{patient.name || 'N/A'}</div>
+                                                        <div className="text-sm text-gray-500">{patient.phone}</div>
                                                     </div>
                                                 </div>
-                                            </div>
-                                        </td>
-                                        <td className="px-6 py-4 whitespace-nowrap">
-                                            <div className="text-sm">
-                                                <div className="text-gray-900">{patient.gender || 'N/A'}</div>
-                                                <div className="text-gray-500">{patient.dateOfBirth}</div>
-                                            </div>
-                                        </td>
-                                        <td className="px-6 py-4 whitespace-nowrap">
-                                            <div className="text-sm">
-                                                <div className="text-gray-900">Blood: {patient.medicalInfo?.bloodType || 'N/A'}</div>
-                                                <div className="text-gray-500">
-                                                    {patient.medicalInfo?.allergies?.length 
-                                                        ? `${patient.medicalInfo.allergies.length} allergies`
-                                                        : 'No allergies'}
-                                                </div>
-                                            </div>
-                                        </td>
-                                        <td className="px-6 py-4 whitespace-nowrap">
-                                            {lastAppointment ? (
+                                            </td>
+                                            <td className="px-6 py-4 w-1/6 whitespace-nowrap">
                                                 <div className="text-sm">
-                                                    <div className="text-gray-900">{lastAppointment.date}</div>
-                                                    <div className="text-gray-500">{lastAppointment.time}</div>
-                                                    <div className="text-xs text-gray-500">{lastAppointment.type}</div>
+                                                    <div className="text-gray-900">{patient.gender || 'N/A'}</div>
+                                                    <div className="text-gray-500">
+                                                        {(() => {
+                                                            const d = new Date(patient.dob);
+                                                            const day = String(d.getDate()).padStart(2, "0");
+                                                            const month = String(d.getMonth() + 1).padStart(2, "0");
+                                                            const year = d.getFullYear();
+                                                            return `${day}-${month}-${year}`;
+                                                        })()}
+                                                    </div>
                                                 </div>
-                                            ) : 'No visits'}
-                                        </td>
-                                        <td className="px-6 py-4 whitespace-nowrap">
-                                            {lastDoctor ? (
+                                            </td>
+                                            <td className="px-6 py-4 w-1/6 whitespace-nowrap">
                                                 <div className="text-sm">
-                                                    <div className="text-gray-900">{lastDoctor.name}</div>
-                                                    <div className="text-gray-500">{lastDoctor.specialization}</div>
-                                                    <div className="text-xs text-gray-500">{lastDoctor.specialty}</div>
+                                                    <div className="text-gray-900">Blood: {patient.medicalInfo?.bloodType || 'N/A'}</div>
+                                                    <div className="text-gray-500">
+                                                        {patient.medicalInfo?.allergies?.length
+                                                            ? `${patient.medicalInfo.allergies.length} allergies`
+                                                            : 'No allergies'}
+                                                    </div>
                                                 </div>
-                                            ) : 'N/A'}
-                                        </td>
-                                        <td className="px-6 py-4 whitespace-nowrap">
-                                            <span className={`px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${
-                                                patient.status === 'active' 
-                                                    ? 'bg-green-100 text-green-800' 
-                                                    : 'bg-red-100 text-red-800'
-                                            }`}>
-                                                {patient.status}
-                                            </span>
-                                        </td>
-                                    </tr>
-                                )})}
+                                            </td>
+                                            <td className="px-6 py-4 w-1/6 whitespace-nowrap">
+                                                {patient ? (
+                                                    <div className="text-sm">
+                                                        {(() => {
+                                                            const d = new Date(patient.updatedAt);
+                                                            const day = String(d.getDate()).padStart(2, "0");
+                                                            const month = String(d.getMonth() + 1).padStart(2, "0");
+                                                            const year = d.getFullYear();
+                                                            const hours = String(d.getHours()).padStart(2, "0");
+                                                            const minutes = String(d.getMinutes()).padStart(2, "0");
+                                                            return (
+                                                                <>
+                                                                    <div className="text-sm font-gray-500">{`${day}-${month}-${year}`}</div>
+                                                                    <div className="text-sm text-gray-500">{`${hours}:${minutes}`}</div>
+                                                                </>
+                                                            );
+                                                        })()}
+                                                    </div>
+                                                ) : 'No visits'}
+                                            </td>
+                                            <td className="px-6 py-4 w-6/6 whitespace-nowrap">
+                                                {(() => {
+                                                    const latestAppointment = Array.isArray(patient.appointments) && patient.appointments.length > 0 ? patient.appointments[0] : null;
+                                                    const status = latestAppointment?.status;
+                                                    let statusText = '';
+                                                    let statusClass = '';
+                                                    switch (status) {
+                                                        case 'completed':
+                                                            statusText = 'Completed';
+                                                            statusClass = 'bg-green-100 text-green-800';
+                                                            break;
+                                                        case 'pending':
+                                                            statusText = 'Pending';
+                                                            statusClass = 'bg-yellow-100 text-yellow-800';
+                                                            break;
+                                                        case 'cancelled':
+                                                            statusText = 'Cancelled';
+                                                            statusClass = 'bg-red-100 text-red-800';
+                                                            break;
+                                                        default:
+                                                            statusText = status || 'No Appointments';
+                                                            statusClass = 'bg-gray-100 text-gray-800';
+                                                    }
+                                                    return (
+                                                        <span className={`px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${statusClass}`}>
+                                                            {statusText}
+                                                        </span>
+                                                    );
+                                                })()}
+                                            </td>
+                                        </tr>
+                                    )
+                                })}
                             </tbody>
                         </table>
                         {filteredPatients.length === 0 && !error && (
@@ -618,3 +566,4 @@ export const PatientSearch = ({ initialSearchTarget, onExitPatientView, getPageT
         </>
     );
 };
+export default PatientSearch;

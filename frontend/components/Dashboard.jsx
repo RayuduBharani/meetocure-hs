@@ -119,6 +119,7 @@ const TodaysSchedule = ({ appointments }) => {
 
 const Dashboard = () => {
   const [appointments, setAppointments] = useState([]);
+  const [todaysVerifiedAppointments, setTodaysVerifiedAppointments] = useState([]);
   const [verifiedDoctors, setVerifiedDoctors] = useState([]);
   const [patients, setPatients] = useState([]);
   const [doctors, setDoctors] = useState([]);
@@ -126,14 +127,17 @@ const Dashboard = () => {
   const [weeklyData, setWeeklyData] = useState([]);
   const [unverifiedDoctors, setUnverifiedDoctors] = useState([]);
   const [selectedDoctor, setSelectedDoctor] = useState(null);
+  const [verifiedDoctorsAppointmentsCount, setVerifiedDoctorsAppointmentsCount] = useState(0);
+  const [confirmedAppointmentsCount, setConfirmedAppointmentsCount] = useState(0);
+  const [pendingAppointmentsCount, setPendingAppointmentsCount] = useState(0);
+  const [cancelledAppointmentsCountVerified, setCancelledAppointmentsCountVerified] = useState(0);
 
 
   const navigate = useNavigate();
 
   // ✅ Fetch all data once on mount
   useEffect(() => {
-
-    // Fetch today's appointments
+    // Fetch today's appointments (all)
     fetch('/api/appointments/today')
       .then((res) => res.json())
       .then((data) => {
@@ -141,6 +145,16 @@ const Dashboard = () => {
         setAppointments(appointments);
       })
       .catch(() => setAppointments([]));
+
+    // Fetch today's appointments for verified doctors in the current hospital
+    const hospitalName = localStorage.getItem('hospitalName') || '';
+    const todayDate = new Date().toISOString().slice(0, 10);
+    fetch(`/api/dashboard/verified-doctors-todays-appointments?hospitalName=${encodeURIComponent(hospitalName)}&date=${todayDate}`)
+      .then((res) => res.json())
+      .then((data) => {
+        setTodaysVerifiedAppointments(Array.isArray(data.appointments) ? data.appointments : []);
+      })
+      .catch(() => setTodaysVerifiedAppointments([]));
 
     // Fetch patients
     fetch('/api/patients')
@@ -151,7 +165,7 @@ const Dashboard = () => {
       })
       .catch(() => setPatients([]));
 
-    const hospitalName = localStorage.getItem('hospitalName') || '';
+    // const hospitalName = localStorage.getItem('hospitalName') || '';
 
     // Fetch verified doctors for this hospital
     fetch(`/api/doctors?hospitalName=${encodeURIComponent(hospitalName)}&verified=true`)
@@ -207,6 +221,22 @@ const Dashboard = () => {
       .catch((error) => {
         console.error('Error fetching weekly appointments:', error);
         setWeeklyData([]);
+      });
+
+    // Fetch total appointments for verified doctors in the current hospital (with status breakdown)
+    fetch(`/api/dashboard/verified-doctors-appointments-count?hospitalName=${encodeURIComponent(hospitalName)}`)
+      .then((res) => res.json())
+      .then((data) => {
+        setVerifiedDoctorsAppointmentsCount(data.totalAppointments || 0);
+        setConfirmedAppointmentsCount(data.confirmedAppointments || 0);
+        setPendingAppointmentsCount(data.pendingAppointments || 0);
+        setCancelledAppointmentsCountVerified(data.cancelledAppointments || 0);
+      })
+      .catch(() => {
+        setVerifiedDoctorsAppointmentsCount(0);
+        setConfirmedAppointmentsCount(0);
+        setPendingAppointmentsCount(0);
+        setCancelledAppointmentsCountVerified(0);
       });
   }, []);
 
@@ -279,18 +309,7 @@ const Dashboard = () => {
   const cancelledAppointmentsCount = Array.isArray(appointments) ? appointments.filter(a => a.status === 'cancelled' || a.status === 'Cancelled').length : 0;
 
   // Filter today's appointments to only those with verified doctors in the logged-in hospital
-  const hospitalName = localStorage.getItem('hospitalName') || '';
-  const verifiedDoctorIds = verifiedDoctors.map(doc => doc._id);
-  const todaysVerifiedAppointments = Array.isArray(appointments)
-    ? appointments.filter(app => {
-      // Doctor must be verified and match hospital
-      const doctor = app.doctor || app.doctorInfo || {};
-      return (
-        verifiedDoctorIds.includes(doctor._id) &&
-        (doctor.hospitalName === hospitalName)
-      );
-    })
-    : [];
+  // ...existing code...
 
   return (
     <>
@@ -300,25 +319,25 @@ const Dashboard = () => {
         <div className="grid grid-cols-1 sm:grid-cols-4 gap-6 mb-8">
           <StatCard
             title="Total Appointments"
-            value={totalAppointmentsCount}
+            value={verifiedDoctorsAppointmentsCount}
             icon={<AppointmentIcon className="w-5 h-5" />}
             trend={0}
           />
           <StatCard
             title="Confirmed"
-            value={Array.isArray(appointments) ? appointments.filter(a => a.status === 'confirmed' || a.status === 'Confirmed').length : 0}
+            value={confirmedAppointmentsCount}
             icon={<AppointmentIcon className="w-5 h-5" />}
             trend={0}
           />
           <StatCard
             title="Pending"
-            value={Array.isArray(appointments) ? appointments.filter(a => a.status === 'pending' || a.status === 'Pending').length : 0}
+            value={pendingAppointmentsCount}
             icon={<AppointmentIcon className="w-5 h-5" />}
             trend={0}
           />
           <StatCard
             title="Cancelled"
-            value={cancelledAppointmentsCount}
+            value={cancelledAppointmentsCountVerified}
             icon={<ReportIcon className="w-5 h-5" />}
             trend={0}
           />

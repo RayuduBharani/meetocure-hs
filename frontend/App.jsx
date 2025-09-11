@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
 import { Sidebar } from './components/Sidebar';
-import { PatientSearch } from './components/PatientSearch';
+import PatientSearch from './components/PatientSearch';
 import Dashboard from './components/Dashboard';
-import { AppointmentsDashboard } from './components/AppointmentsDashboard';
+import AppointmentsDashboard from './components/AppointmentsDashboard';
 import { DoctorManagement } from './components/DoctorManagement';
 import LoginPage from './components/LoginPage';
 import DoctorDetailsPage from './components/DoctorDetailsPage';
