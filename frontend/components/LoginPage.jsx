@@ -2,6 +2,7 @@ import { useState } from 'react';
 import React from "react";
 import { HospitalBuildingIcon, EmailIcon, LockIcon } from './icons/Icons';
 import RegisterPage from './RegisterPage';
+// eslint-disable-next-line react/prop-types
 const LoginPage = ({ onLogin }) => {
     const [isLoading, setIsLoading] = useState(false);
     const [showRegister, setShowRegister] = useState(false);

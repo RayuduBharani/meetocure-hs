@@ -1,9 +1,9 @@
+/* eslint-disable no-unused-vars */
+/* eslint-disable react/prop-types */
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   AppointmentIcon,
-  DoctorIcon,
-  PatientIcon,
   ReportIcon,
   UserCircleIcon,
 } from './icons/Icons';
@@ -346,7 +346,7 @@ const Dashboard = () => {
         {/* Today's Appointments (only patients with verified doctors in logged-in hospital) */}
         <div className="bg-white p-8 rounded-2xl shadow-md border border-gray-200/80 mb-8">
           <h3 className="text-2xl font-bold text-gray-800 mb-6">
-            Today's Appointments
+            Today&apos;s Appointments
           </h3>
           <TodaysSchedule appointments={todaysVerifiedAppointments} />
         </div>

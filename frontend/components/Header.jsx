@@ -1,8 +1,8 @@
+/* eslint-disable react/prop-types */
 import React from 'react';
-import { NotificationIcon, SearchIcon, UserCircleIcon } from './icons/Icons';
 import { ArrowLeftIcon } from '@heroicons/react/24/solid';
 
-export const Header = ({ title, searchPlaceholder, searchValue, onSearchChange }) => {
+export const Header = ({ title}) => {
   const handleBack = () => {
     window.history.back();
   };
@@ -18,6 +18,7 @@ export const Header = ({ title, searchPlaceholder, searchValue, onSearchChange }
         const payload = JSON.parse(atob(token.split('.')[1]));
         email = payload.email;
       } catch (e) {
+        console.log(e)
         email = 'admin@meetocure.com';
       }
     } else {

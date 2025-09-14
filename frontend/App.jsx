@@ -1,3 +1,4 @@
+/* eslint-disable react/prop-types */
 import React, { useState } from 'react';
 import { Sidebar } from './components/Sidebar';
 import PatientSearch from './components/PatientSearch';
@@ -13,7 +14,6 @@ import { BrowserRouter as Router, Routes, Route, useLocation } from 'react-route
 
 
 const AppLayout = ({
-  isLoggedIn,
   handleLogout,
   hospitalName,
   searchTarget,

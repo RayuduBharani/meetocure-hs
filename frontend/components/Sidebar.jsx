@@ -1,5 +1,5 @@
 import React from 'react';
-import { DashboardIcon, AppointmentIcon, DoctorIcon, PatientIcon, ReportIcon, BrandIcon, LogoutIcon } from './icons/Icons';
+import { DashboardIcon, AppointmentIcon, DoctorIcon, PatientIcon, LogoutIcon } from './icons/Icons';
 import { useNavigate } from 'react-router-dom';
 
 const navItems = [
@@ -10,7 +10,8 @@ const navItems = [
   // { name: 'Reports', icon: ReportIcon },
 ];
 
-export const Sidebar = ({ activePage, setActivePage, onLogout }) => {
+// eslint-disable-next-line react/prop-types
+export const Sidebar = ({ activePage, onLogout }) => {
   // Use React Router navigation
   const navigate = useNavigate();
   const navToPath = {

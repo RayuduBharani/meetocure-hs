@@ -1,7 +1,7 @@
+/* eslint-disable react/prop-types */
 import React, { useEffect, useState } from "react";
 import { Header } from "./Header";
 import { UserCircleIcon } from "./icons/Icons";
-import { StarIcon } from "@heroicons/react/24/solid";
 import { useNavigate } from 'react-router-dom';
 
 /* ---------------------- Doctor Management ---------------------- */

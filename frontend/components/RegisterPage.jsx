@@ -1,5 +1,5 @@
+/* eslint-disable react/prop-types */
 import React, { useState } from 'react';
-
 const RegisterPage = ({ onRegister, initialData }) => {
     const [form, setForm] = useState({
         address: '',
@@ -41,6 +41,7 @@ const RegisterPage = ({ onRegister, initialData }) => {
                 setError(data.error || 'Registration failed');
             }
         } catch (err) {
+            console.log(err)
             setError('Network error');
         }
         setIsLoading(false);
