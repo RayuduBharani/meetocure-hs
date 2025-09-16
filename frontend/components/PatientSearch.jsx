@@ -174,17 +174,17 @@ const AppointmentDetailModal = ({ appointment, onClose }) => (
     </div>
 );
 
-const PatientRow = ({ patient, onView }) => (
-    <div onClick={() => onView(patient)} className="grid grid-cols-5 items-center py-4 px-2 border-b border-gray-200/80 last:border-b-0 hover:bg-gray-50 transition-colors cursor-pointer">
-        <div className="flex items-center gap-4 col-span-2">
-            <UserCircleIcon className="w-10 h-10 text-gray-400" />
-            <span className="font-medium text-gray-800">{patient.name}</span>
-        </div>
-        <div className="text-gray-600">{patient.patientId}</div>
-        <div className="text-gray-600">{patient.email}</div>
-        <div className="text-gray-600">{patient.phone}</div>
-    </div>
-);
+// const PatientRow = ({ patient, onView }) => (
+//     <div onClick={() => onView(patient)} className="grid grid-cols-5 items-center py-4 px-2 border-b border-gray-200/80 last:border-b-0 hover:bg-gray-50 transition-colors cursor-pointer">
+//         <div className="flex items-center gap-4 col-span-2">
+//             <UserCircleIcon className="w-10 h-10 text-gray-400" />
+//             <span className="font-medium text-gray-800">{patient.name}</span>
+//         </div>
+//         <div className="text-gray-600">{patient.patientId}</div>
+//         <div className="text-gray-600">{patient.email}</div>
+//         <div className="text-gray-600">{patient.phone}</div>
+//     </div>
+// );
 
 export const PatientSearch = ({ initialSearchTarget, onExitPatientView, getPageTitle }) => {
     // PDF download handler

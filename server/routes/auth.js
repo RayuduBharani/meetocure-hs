@@ -1,26 +1,17 @@
-
+import HospitalLogins from '../models/User.js';
 import express from 'express';
 import User from '../models/User.js';
 import jwt from 'jsonwebtoken';
 import multer from 'multer';
 import path from 'path';
+import upload from '../middlewares/upload.js';
 const router = express.Router();
 
 const JWT_SECRET = process.env.JWT_SECRET || 'meetocure_secret';
 
-// Multer setup for hospital image upload
-const storage = multer.diskStorage({
-    destination: function (req, file, cb) {
-        cb(null, path.join(process.cwd(), 'uploads/hospitals'));
-    },
-    filename: function (req, file, cb) {
-        cb(null, Date.now() + '_' + file.originalname);
-    }
-});
-const upload = multer({ storage });
-
 // POST /auth/register (register hospital)
 router.post('/register', upload.single('image'), async (req, res) => {
+    const hospitalImage = req.file?.path;
     try {
         const { hospitalName, address, contact, email, password } = req.body;
         if (!hospitalName || !address || !contact || !email || !password) {
@@ -50,6 +41,7 @@ router.post('/register', upload.single('image'), async (req, res) => {
         res.status(400).json({ error: err.message });
     }
 });
+
 
 // POST /auth/login (verify credentials and return JWT)
 router.post('/login', async (req, res) => {

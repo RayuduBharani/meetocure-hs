@@ -30,7 +30,7 @@ const RegisterPage = ({ onRegister, initialData }) => {
             formData.append('address', form.address);
             formData.append('contact', form.contact);
             if (form.image) formData.append('image', form.image);
-            const res = await fetch('/api/auth/register', {
+            const res = await fetch('http://localhost:5000/api/auth/register', {
                 method: 'POST',
                 body: formData
             });
@@ -46,6 +46,8 @@ const RegisterPage = ({ onRegister, initialData }) => {
         }
         setIsLoading(false);
     };
+
+
 
     return (
         <div className="flex flex-col items-center justify-center min-h-screen bg-gray-50 p-4">

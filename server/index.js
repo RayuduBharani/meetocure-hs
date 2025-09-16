@@ -1,3 +1,5 @@
+import dotenv from "dotenv";
+dotenv.config();
 import mongoose from 'mongoose';
 const MONGO_URI = 'mongodb+srv://Meetocure:u3OMLp8PimzhzbqP@meetocure.fp2kavy.mongodb.net/?retryWrites=true&w=majority&appName=MeetOcure';
 mongoose.connect(MONGO_URI)
@@ -5,9 +7,7 @@ mongoose.connect(MONGO_URI)
     .catch((err) => console.error('MongoDB connection error:', err));
 import express from 'express';
 import cors from 'cors';
-
 const app = express();
-
 app.use(cors());
 app.use(express.json());
 
@@ -32,8 +32,14 @@ app.use('/api/reports', reportsRoutes);
 app.use('/api/dashboard', dashboardRoutes);
 app.use('/api/hospitals', hospitalsRoutes);
 app.use('/api/auth', authRoutes);
+console.log("DEBUG .env", {
+    JWT_SECRET: process.env.JWT_SECRET,
+  CLOUD_NAME: process.env.CLOUDINARY_CLOUD_NAME,
+  API_KEY: process.env.CLOUDINARY_API_KEY,
+  API_SECRET: process.env.CLOUDINARY_API_SECRET ? "set" : "missing",
+});
 
-const PORT = process.env.PORT || 5001;
+const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
     console.log(`Server running on port ${PORT}`);
 });
