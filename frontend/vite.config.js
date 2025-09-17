@@ -16,7 +16,7 @@ export default defineConfig(({ mode }) => {
     },
     server: {
       proxy: {
-        '/api': 'http://localhost:5000'
+        '/api': 'http://13.201.97.49:5000'
       }
     }
   };

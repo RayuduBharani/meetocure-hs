@@ -30,7 +30,7 @@ const RegisterPage = ({ onRegister, initialData }) => {
             formData.append('address', form.address);
             formData.append('contact', form.contact);
             if (form.image) formData.append('image', form.image);
-            const res = await fetch('http://localhost:5000/api/auth/register', {
+            const res = await fetch('http://13.201.97.49:5000/api/auth/register', {
                 method: 'POST',
                 body: formData
             });
