@@ -18,20 +18,35 @@ const LoginPage = ({ onLogin }) => {
             const res = await fetch('http://localhost:5000/api/auth/login', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ email, password, hospitalName: HospitalName, }),
+                body: JSON.stringify({ 
+                    email, 
+                    password, 
+                    hospitalName: HospitalName 
+                })
             });
 
             const data = await res.json();
-            if (res.status === 409) {
-                alert(data.error || 'This email is already registered for another hospital.');
-            } else if (res.status === 404 || (data.error && data.error.toLowerCase().includes('not found'))) {
-                // Hospital/email not found, show register page
-                setShowRegister({
-                    hospitalName: HospitalName,
-                    email,
-                    password
-                });
-            } else if (data.success && data.token) {
+
+            if (!res.ok) {
+                if (res.status === 409) {
+                    alert(data.error || 'Email is registered with a different hospital');
+                } else if (res.status === 404) {
+                    // Hospital not found, show register page
+                    setShowRegister({
+                        hospitalName: HospitalName,
+                        email,
+                        password
+                    });
+                } else if (res.status === 401) {
+                    alert(data.error || 'Invalid credentials');
+                } else {
+                    alert(data.error || 'Login failed');
+                }
+                return;
+            }
+
+            if (data.success && data.token) {
+                // Store user data in localStorage
                 localStorage.setItem('token', data.token);
                 localStorage.setItem('hospitalName', data.hospitalName);
                 localStorage.setItem('email', data.email);
@@ -41,9 +56,11 @@ const LoginPage = ({ onLogin }) => {
                 alert('Login failed: ' + (data.error || 'Unknown error'));
             }
         } catch (err) {
-            alert('Login error: ' + err.message);
+            console.error('Login error:', err);
+            alert('Network error. Please try again.');
+        } finally {
+            setIsLoading(false);
         }
-        setIsLoading(false);
     };
 
     const inputClasses = "block w-full rounded-lg border border-gray-300 bg-white py-3 pr-3 pl-10 text-gray-900 placeholder:text-gray-400 focus:outline-none focus:border-[#062e3e] focus:ring-1 focus:ring-[#062e3e] sm:text-sm transition-colors";
